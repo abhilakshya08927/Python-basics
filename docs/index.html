@@ -1,0 +1,2090 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Python Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: lab-notebook — lesson page on the left, workbench (problem + editor + console) on the right; stacks on phones. */
+:root{
+  --bg:#EEF1EE; --paper:#FBFCFA; --ink:#17201C; --muted:#5B6862; --line:#D5DCD7; --grid:#E4EAE5;
+  --accent:#1F4FD1; --accent-ink:#FFFFFF; --mark:#F5D547; --mark-ink:#2A2300;
+  --ok:#17804A; --ok-bg:#E2F3E8; --bad:#B42318; --bad-bg:#FBE7E4; --warn-bg:#FFF4D6;
+  --code-bg:#1B2420; --code-ink:#E6EEE9; --code-dim:#7D8C85;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111613; --paper:#18201C; --ink:#E4EBE6; --muted:#98A69F; --line:#2B3530; --grid:#1E2723;
+  --accent:#7B9CFF; --accent-ink:#0B1230; --mark:#E9C933; --mark-ink:#241D00;
+  --ok:#5CCB8C; --ok-bg:#15301F; --bad:#FF8A7A; --bad-bg:#3A1A16; --warn-bg:#352C10;
+  --code-bg:#0C110E; --code-ink:#DDE7E1; --code-dim:#6C7A73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111613; --paper:#18201C; --ink:#E4EBE6; --muted:#98A69F; --line:#2B3530; --grid:#1E2723;
+  --accent:#7B9CFF; --accent-ink:#0B1230; --mark:#E9C933; --mark-ink:#241D00;
+  --ok:#5CCB8C; --ok-bg:#15301F; --bad:#FF8A7A; --bad-bg:#3A1A16; --warn-bg:#352C10;
+  --code-bg:#0C110E; --code-ink:#DDE7E1; --code-dim:#6C7A73; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);margin:0}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+a{color:var(--accent)}
+code{font-family:var(--f-mono);font-size:.88em;background:var(--grid);padding:.08em .35em;border-radius:4px}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font:600 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:12px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.brand .prompt{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+nav.tabs{display:flex;flex-wrap:wrap;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px}
+nav.tabs button{border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:999px;font-weight:700;font-size:14px}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.meters{display:flex;gap:16px;align-items:center;font-size:14px}
+.meter{display:flex;flex-direction:column;gap:4px;min-width:120px}
+.meter b{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.streak{display:flex;align-items:center;gap:8px;background:var(--mark);color:var(--mark-ink);border-radius:8px;padding:6px 10px;font-weight:700}
+.streak span{font:800 20px/1 var(--f-display);font-variant-numeric:tabular-nums}
+
+/* day view */
+.dayhead{display:flex;flex-wrap:wrap;align-items:end;gap:12px 24px;padding-block:28px 18px}
+.dayhead .num{font:800 clamp(56px,9vw,96px)/.8 var(--f-display);color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.dayhead .t{flex:1;min-width:220px}
+.dayhead h2{font-size:clamp(26px,3.4vw,38px);font-weight:800;letter-spacing:-.015em;margin-top:6px}
+.daynav{display:flex;gap:8px}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:8px 14px;font-weight:700;font-size:14px}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default}
+.grid2{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px;align-items:start}
+@media (max-width:980px){.grid2{grid-template-columns:minmax(0,1fr)}}
+
+.lesson{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:24px;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px);background-size:100% 28px;background-position:0 12px}
+.lesson > *{max-width:62ch}
+.lesson p,.lesson ul,.lesson ol{margin:0 0 14px}
+.lesson pre,.example pre{font:14px/1.55 var(--f-mono);background:var(--code-bg);color:var(--code-ink);padding:12px 14px;border-radius:8px;overflow-x:auto;margin:0 0 14px;max-width:100%}
+.lesson pre code{background:none;padding:0}
+table.ops{border-collapse:collapse;margin:0 0 14px;font-size:15px;background:var(--paper);display:block;overflow-x:auto}
+table.ops td{border-bottom:1px solid var(--line);padding:6px 12px 6px 0;vertical-align:top}
+table.ops td:first-child{white-space:nowrap}
+.example{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px}
+.example .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.watch{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px}
+.watch ul{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}
+.watch a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--ink);padding:6px 8px;border-radius:6px;background:var(--bg)}
+.watch a:hover{outline:1px solid var(--accent)}
+.watch a small{color:var(--muted)}
+.watch .play{font:600 11px/1 var(--f-mono);color:var(--accent);flex:none}
+
+.bench{display:flex;flex-direction:column;gap:14px;min-width:0}
+.ptabs{display:flex;gap:8px;flex-wrap:wrap}
+.ptab{flex:1;min-width:140px;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 12px;color:var(--ink)}
+.ptab small{display:block;font:600 11px/1.3 var(--f-mono);color:var(--muted);letter-spacing:.04em}
+.ptab .pt{font-weight:700;font-size:14px}
+.ptab[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 -3px 0 var(--ink)}
+.ptab.solved small{color:var(--ok)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.prompt-text p{margin:0}
+.prompt-text pre{font:14px/1.5 var(--f-mono);background:var(--bg);padding:8px 12px;border-radius:6px;margin:8px 0 0;overflow-x:auto}
+.ptype{display:inline-block;font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:4px;background:var(--bg);color:var(--muted);margin-bottom:10px}
+
+.editor{display:flex;background:var(--code-bg);border-radius:var(--r);overflow:hidden;min-height:260px}
+.gutter{font:14px/1.6 var(--f-mono);color:var(--code-dim);text-align:right;padding:12px 8px 12px 12px;user-select:none;white-space:pre;overflow:hidden;flex:none}
+textarea#code{flex:1;min-width:0;border:0;outline:0;resize:vertical;background:transparent;color:var(--code-ink);font:14px/1.6 var(--f-mono);padding:12px 12px 12px 4px;min-height:260px;tab-size:4;white-space:pre;overflow:auto;caret-color:var(--mark)}
+.editor:focus-within{box-shadow:0 0 0 3px var(--accent)}
+.stdin{display:grid;gap:6px}
+.stdin label{font-size:13px;color:var(--muted)}
+textarea#stdin{font:14px/1.5 var(--f-mono);border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:8px 10px;min-height:44px;resize:vertical;width:100%}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.actions .sp{flex:1}
+.kbd{font:12px var(--f-mono);color:var(--muted)}
+.console{font:14px/1.55 var(--f-mono);background:var(--code-bg);color:var(--code-ink);border-radius:var(--r);padding:12px 14px;min-height:64px;max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.console .err{color:#FF9B8E}
+.console .dim{color:var(--code-dim)}
+.helpbox{border-radius:8px;padding:10px 14px;background:var(--warn-bg);font-size:15px}
+.results{display:grid;gap:8px}
+.res{border-radius:8px;padding:10px 12px;font-size:14px;display:grid;gap:4px;min-width:0}
+.res.ok{background:var(--ok-bg)}
+.res.bad{background:var(--bad-bg)}
+.res .h{font-weight:700;display:flex;gap:8px;align-items:center}
+.res .h .tag{font:700 11px/1 var(--f-mono);padding:3px 6px;border-radius:4px;color:var(--paper)}
+.res.ok .tag{background:var(--ok)} .res.bad .tag{background:var(--bad)}
+.res pre{font:13px/1.45 var(--f-mono);margin:0;white-space:pre-wrap;word-break:break-word}
+.verdict{font:800 20px/1.2 var(--f-display)}
+.verdict.ok{color:var(--ok)}
+.solution pre{font:14px/1.55 var(--f-mono);background:var(--code-bg);color:var(--code-ink);padding:12px 14px;border-radius:8px;overflow-x:auto;margin:8px 0 0}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+
+/* practice */
+.phead{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;padding-block:28px 16px}
+.phead .t{flex:1;min-width:240px}
+.phead h2{font-size:clamp(26px,3.4vw,38px);font-weight:800;letter-spacing:-.015em;margin-top:6px}
+.phead .sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.potd{border:0;background:var(--mark);color:var(--mark-ink);border-radius:var(--r);padding:12px 16px;text-align:left;display:grid;gap:2px;min-width:230px}
+.potd .eyebrow{color:var(--mark-ink);opacity:.75}
+.potd b{font:800 19px/1.2 var(--f-display)}
+.potd small{font:600 11px var(--f-mono);letter-spacing:.04em}
+.topics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.topic{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;display:flex;gap:8px;align-items:center}
+.topic small{font:600 11px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.topic[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.topic[aria-selected="true"] small{color:var(--bg);opacity:.7}
+.topic.done small{color:var(--ok)}
+.pgrid{grid-template-columns:minmax(0,4fr) minmax(0,7fr)}
+@media (max-width:980px){.pgrid{grid-template-columns:minmax(0,1fr)}}
+.ptopic{background-image:none}
+.plist{display:grid;gap:6px;max-width:none}
+.plist button{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:15px}
+.plist button[aria-selected="true"]{border-color:var(--ink);background:var(--paper);box-shadow:inset 3px 0 0 var(--ink)}
+.plist .ck{color:var(--ok);font-weight:700}
+.lv{font:700 10px/1 var(--f-mono);letter-spacing:.06em;padding:4px 6px;border-radius:4px;width:58px;text-align:center;display:inline-block}
+.lv1{background:var(--ok-bg);color:var(--ok)} .lv2{background:var(--warn-bg);color:var(--mark-ink)} .lv3{background:var(--bad-bg);color:var(--bad)}
+:root[data-theme="dark"] .lv2{color:var(--mark)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lv2{color:var(--mark)}}
+.ptitle{font-size:22px;display:flex;gap:10px;align-items:center;scroll-margin-top:90px}
+
+/* all days */
+.weeks{display:grid;gap:28px;padding-block:28px}
+.week h3{font-size:20px;margin-bottom:12px}
+.week h3 small{font:600 12px var(--f-mono);color:var(--muted);margin-left:8px;letter-spacing:.04em}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.daytile{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:var(--r);padding:12px 14px;color:var(--ink);display:grid;gap:6px}
+.daytile:hover{border-color:var(--ink)}
+.daytile .dn{font:800 28px/1 var(--f-display);color:var(--muted);font-variant-numeric:tabular-nums}
+.daytile .tt{font-weight:700;font-size:15px;line-height:1.3}
+.daytile .dots{display:flex;gap:4px}
+.daytile .dots i{width:18px;height:6px;border-radius:3px;background:var(--line)}
+.daytile .dots i.on{background:var(--ok)}
+.daytile.done .dn{color:var(--ok)}
+.daytile.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.daytile.today .dn{color:var(--accent)}
+
+/* resources */
+.res-intro{max-width:70ch;padding-block:28px 8px}
+.res-intro h2{font-size:32px;font-weight:800;margin-bottom:8px}
+.res-intro p{color:var(--muted);margin:0}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;padding-block:18px}
+.rcard{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:8px}
+.rcard.pick{border-color:var(--accent)}
+.rcard h3{font-size:19px}
+.rcard .who{font-size:14px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 11px/1 var(--f-mono);padding:4px 7px;border-radius:4px;background:var(--bg);color:var(--muted);letter-spacing:.03em}
+.chip.pick{background:var(--mark);color:var(--mark-ink)}
+.rcard p{margin:0;font-size:15px}
+.rcard .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
+.plan{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px;max-width:80ch}
+.plan ol{margin:8px 0 0;padding-left:20px}
+.foot{color:var(--muted);font-size:13px;padding-block:24px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+.linkbtn{border:0;background:none;color:var(--muted);text-decoration:underline;padding:0;font-size:13px}
+@media (max-width:640px){.meter{min-width:90px}.lesson{padding:18px}.top .wrap{gap:10px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="prompt">&gt;&gt;&gt;</span><h1>Daily Python Lab</h1></div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-today" data-view="today" aria-selected="true">Today</button>
+      <button role="tab" id="tab-practice" data-view="practice" aria-selected="false">Practice</button>
+      <button role="tab" id="tab-days" data-view="days" aria-selected="false">All 30 days</button>
+      <button role="tab" id="tab-res" data-view="res" aria-selected="false">Resources</button>
+    </nav>
+    <div class="meters">
+      <div class="meter"><span class="eyebrow">Solved</span><b id="solvedTxt">0 / 90</b><div class="bar"><i id="solvedBar"></i></div></div>
+      <div class="streak" title="Days in a row with at least one problem solved"><span id="streakNum">0</span> day streak</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-today"></section>
+  <section id="view-practice" hidden></section>
+  <section id="view-days" hidden></section>
+  <section id="view-res" hidden></section>
+  <div class="foot">
+    <span>Python runs in your browser (Skulpt). Progress is saved on this device.</span>
+    <span id="resetArea"><button class="linkbtn" id="resetBtn" type="button">Reset all progress</button></span>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+<script>
+// 30-day Python-from-zero curriculum.
+// Problem types:
+//   output: program's printed output must match `cases[i].expected` (inputs fed to input()).
+//   func:   `tests` = [pythonExpression, expectedRepr]; the expression is run after the user's code.
+const W = (src, q) => ({ src, q });
+const CS50 = (n, t) => W("CS50P · Lecture " + n + " · " + t, "CS50P lecture " + n + " " + t);
+const CWH = (q) => W("CodeWithHarry (Hindi)", "CodeWithHarry python " + q);
+const CHUCK = (q) => W("Dr. Chuck · Python for Everybody", "Python for Everybody Dr Chuck " + q);
+
+const COURSE = [
+// ───────────────────────── WEEK 1 · Talking to the computer
+{
+  day: 1, week: 1, title: "Your first program", topic: "print()",
+  lesson: `
+<p>A program is a list of instructions the computer follows <b>top to bottom, one line at a time</b>. Python is a language that reads almost like English, which is why it's the best first language.</p>
+<p>The first instruction everyone learns is <code>print()</code>. Whatever you put inside the brackets appears on the screen. Text must be inside quotes, so Python knows it's text and not a command.</p>
+<pre>print("Hello, world!")
+print("I am learning Python")
+print(2 + 3)</pre>
+<p>Line 3 has no quotes, so Python <i>calculates</i> it and prints <code>5</code>. With quotes, <code>print("2 + 3")</code> would print the text <code>2 + 3</code> exactly.</p>
+<p><b>Rules to remember:</b> brackets must open and close, quotes must open and close, and capital letters matter (<code>Print</code> is not <code>print</code>).</p>
+<p>Press <b>Run</b> (or Ctrl + Enter) to run your code. Mistakes are normal. Read the red error message; it tells you the line number.</p>`,
+  example: 'print("Hello, world!")\nprint("I am learning Python")\nprint(2 + 3)',
+  watch: [CS50(0, "functions variables"), CWH("tutorial day 1 introduction"), CHUCK("why program")],
+  problems: [
+    { id: "d1p1", title: "Say hello", type: "output",
+      prompt: "Print exactly <code>Hello, Python!</code>",
+      starter: "# Write your code below\n",
+      cases: [{ expected: "Hello, Python!" }],
+      hint: "print(\"...\") with the text inside the quotes. Check the comma and the exclamation mark.",
+      solution: 'print("Hello, Python!")' },
+    { id: "d1p2", title: "Three lines", type: "output",
+      prompt: "Print these three lines, in this order:<pre>Name: Ravi\nCollege: JNVU\nYear: 2</pre>",
+      starter: "",
+      cases: [{ expected: "Name: Ravi\nCollege: JNVU\nYear: 2" }],
+      hint: "Use three separate print() lines.",
+      solution: 'print("Name: Ravi")\nprint("College: JNVU")\nprint("Year: 2")' },
+    { id: "d1p3", title: "Let Python do the math", type: "output",
+      prompt: "Print the result of <code>365 * 24</code> (hours in a year). Let Python calculate it; don't type the answer yourself.",
+      starter: "",
+      cases: [{ expected: "8760" }],
+      hint: "No quotes around the maths: print(365 * 24)",
+      solution: "print(365 * 24)" },
+  ]
+},
+{
+  day: 2, week: 1, title: "Variables: giving names to values", topic: "variables & types",
+  lesson: `
+<p>A <b>variable</b> is a labelled box that holds a value. You create one with <code>=</code>, which in Python means "store", not "equals".</p>
+<pre>name = "Ravi"
+age = 19
+cgpa = 8.4
+is_student = True</pre>
+<p>These are the four basic <b>types</b>:</p>
+<ul><li><code>str</code> (string): text, in quotes: <code>"Ravi"</code></li>
+<li><code>int</code> (integer): whole numbers: <code>19</code></li>
+<li><code>float</code>: numbers with a decimal point: <code>8.4</code></li>
+<li><code>bool</code>: <code>True</code> or <code>False</code></li></ul>
+<p>You can print a variable by its name (no quotes), and <code>print</code> can take several things separated by commas; it puts a space between them:</p>
+<pre>print("My name is", name)
+print(type(age))</pre>
+<p>Variables can change: <code>age = age + 1</code> reads the old value, adds 1, and stores it back. Names can't start with a digit or contain spaces; use <code>snake_case</code> like <code>total_marks</code>.</p>`,
+  example: 'name = "Ravi"\nage = 19\nprint("My name is", name)\nprint("Next year I will be", age + 1)\nprint(type(age))',
+  watch: [CS50(0, "functions variables"), CWH("variables and data types"), CHUCK("variables expressions statements")],
+  problems: [
+    { id: "d2p1", title: "Introduce yourself", type: "output",
+      prompt: "Create a variable <code>city</code> holding <code>\"Jodhpur\"</code>, then print <code>I live in Jodhpur</code> using the variable (not by typing Jodhpur in the print).",
+      starter: 'city = \n',
+      cases: [{ expected: "I live in Jodhpur" }],
+      hint: 'print("I live in", city) — the comma adds the space for you.',
+      solution: 'city = "Jodhpur"\nprint("I live in", city)' },
+    { id: "d2p2", title: "Swap two variables", type: "output",
+      prompt: "<code>a = 5</code> and <code>b = 9</code> are given. Swap them so <code>a</code> holds 9 and <code>b</code> holds 5. The last line already prints them; don't change it.",
+      starter: "a = 5\nb = 9\n# swap here\n\nprint(a, b)",
+      cases: [{ expected: "9 5" }],
+      hint: "Use a third variable: temp = a, then a = b, then b = temp. (Python also lets you write a, b = b, a.)",
+      solution: "a = 5\nb = 9\ntemp = a\na = b\nb = temp\nprint(a, b)" },
+    { id: "d2p3", title: "Birthday", type: "output",
+      prompt: "<code>age = 19</code>. Increase <code>age</code> by 1 using <code>age = age + 1</code> (or <code>age += 1</code>), then print <code>age</code>.",
+      starter: "age = 19\n",
+      cases: [{ expected: "20" }],
+      hint: "age = age + 1 on one line, then print(age).",
+      solution: "age = 19\nage = age + 1\nprint(age)" },
+  ]
+},
+{
+  day: 3, week: 1, title: "Numbers and maths", topic: "operators",
+  lesson: `
+<p>Python is a very good calculator. The operators:</p>
+<table class="ops"><tr><td><code>+ - *</code></td><td>add, subtract, multiply</td></tr>
+<tr><td><code>/</code></td><td>divide, always gives a float: <code>7 / 2</code> → <code>3.5</code></td></tr>
+<tr><td><code>//</code></td><td>floor division, drops the decimal: <code>7 // 2</code> → <code>3</code></td></tr>
+<tr><td><code>%</code></td><td>remainder ("modulo"): <code>7 % 2</code> → <code>1</code></td></tr>
+<tr><td><code>**</code></td><td>power: <code>2 ** 10</code> → <code>1024</code></td></tr></table>
+<p>Order follows school maths (BODMAS): brackets first, then <code>**</code>, then <code>* / // %</code>, then <code>+ -</code>.</p>
+<p><code>%</code> is surprisingly useful: <code>n % 2 == 0</code> means n is even, and <code>n % 10</code> gives the last digit of n.</p>
+<p><code>round(3.14159, 2)</code> gives <code>3.14</code>. Shortcuts like <code>total += 5</code> mean <code>total = total + 5</code>.</p>`,
+  example: 'price = 250\nqty = 3\ntotal = price * qty\nprint("Total:", total)\nprint(17 // 5, 17 % 5)\nprint(round(10 / 3, 2))',
+  watch: [CS50(0, "functions variables"), CWH("operators"), CHUCK("variables expressions statements")],
+  problems: [
+    { id: "d3p1", title: "Average marks", type: "output",
+      prompt: "Marks in three subjects: <code>m1 = 78</code>, <code>m2 = 85</code>, <code>m3 = 92</code>. Print their average.",
+      starter: "m1 = 78\nm2 = 85\nm3 = 92\n",
+      cases: [{ expected: "85.0" }],
+      hint: "Brackets matter: (m1 + m2 + m3) / 3. Without brackets only m3 gets divided.",
+      solution: "m1 = 78\nm2 = 85\nm3 = 92\nprint((m1 + m2 + m3) / 3)" },
+    { id: "d3p2", title: "Minutes to hours", type: "output",
+      prompt: "<code>minutes = 135</code>. Print the hours and leftover minutes on one line, like <code>2 15</code>.",
+      starter: "minutes = 135\n",
+      cases: [{ expected: "2 15" }],
+      hint: "hours = minutes // 60, leftover = minutes % 60.",
+      solution: "minutes = 135\nprint(minutes // 60, minutes % 60)" },
+    { id: "d3p3", title: "Last digit", type: "output",
+      prompt: "<code>n = 4827</code>. Print its last digit using an operator (don't just type 7).",
+      starter: "n = 4827\n",
+      cases: [{ expected: "7" }],
+      hint: "The remainder when dividing by 10 is the last digit.",
+      solution: "n = 4827\nprint(n % 10)" },
+  ]
+},
+{
+  day: 4, week: 1, title: "Working with text", topic: "strings",
+  lesson: `
+<p>A <b>string</b> is text. You can use single or double quotes: <code>'hi'</code> and <code>"hi"</code> are the same.</p>
+<p><b>Joining</b> strings is called concatenation and uses <code>+</code>. <b>Repeating</b> uses <code>*</code>:</p>
+<pre>first = "Ravi"
+last = "Sharma"
+print(first + " " + last)   # Ravi Sharma
+print("-" * 10)             # ----------</pre>
+<p><code>len("Python")</code> gives the number of characters: <code>6</code>.</p>
+<p>You <b>can't</b> add a string and a number directly: <code>"Age: " + 19</code> is an error. Convert the number with <code>str(19)</code>, or use commas inside print.</p>
+<p><b>Indexing:</b> each character has a position starting from <b>0</b>. <code>"Python"[0]</code> is <code>"P"</code> and <code>"Python"[-1]</code> is the last character, <code>"n"</code>.</p>`,
+  example: 'word = "Python"\nprint(len(word))\nprint(word[0], word[-1])\nprint("=" * 12)\nprint("Age: " + str(19))',
+  watch: [CS50(0, "functions variables"), CWH("strings"), CHUCK("strings")],
+  problems: [
+    { id: "d4p1", title: "Full name", type: "output",
+      prompt: "Given <code>first = \"Priya\"</code> and <code>last = \"Mehta\"</code>, print <code>Priya Mehta</code> using <code>+</code>.",
+      starter: 'first = "Priya"\nlast = "Mehta"\n',
+      cases: [{ expected: "Priya Mehta" }],
+      hint: 'You need a space between them: first + " " + last',
+      solution: 'first = "Priya"\nlast = "Mehta"\nprint(first + " " + last)' },
+    { id: "d4p2", title: "Underline", type: "output",
+      prompt: "Given <code>title = \"Chapter One\"</code>, print the title, then on the next line print <code>=</code> repeated exactly as many times as the title's length.",
+      starter: 'title = "Chapter One"\n',
+      cases: [{ expected: "Chapter One\n===========" }],
+      hint: '"=" * len(title)',
+      solution: 'title = "Chapter One"\nprint(title)\nprint("=" * len(title))' },
+    { id: "d4p3", title: "First and last letter", type: "output",
+      prompt: "Given <code>word = \"Rajasthan\"</code>, print its first letter and last letter separated by a space: <code>R n</code>.",
+      starter: 'word = "Rajasthan"\n',
+      cases: [{ expected: "R n" }],
+      hint: "word[0] is the first; word[-1] is the last.",
+      solution: 'word = "Rajasthan"\nprint(word[0], word[-1])' },
+  ]
+},
+{
+  day: 5, week: 1, title: "Taking input", topic: "input() & conversion",
+  lesson: `
+<p><code>input()</code> pauses the program and waits for the user to type something. Whatever they type comes back as a <b>string</b>, always, even if they type digits.</p>
+<pre>name = input()
+print("Hello", name)</pre>
+<p>To do maths with input, convert it first:</p>
+<pre>a = int(input())      # whole number
+b = float(input())    # decimal number
+print(a + b)</pre>
+<p>Without <code>int()</code>, <code>"5" + "3"</code> gives <code>"53"</code> (text joined), not <code>8</code>. This is the most common beginner bug.</p>
+<p>On this site, the checker types the inputs for you. When you press <b>Run</b> yourself, put your inputs (one per line) in the <b>Input</b> box under the editor.</p>
+<p>In these exercises, write <code>input()</code> with empty brackets so the output matches exactly.</p>`,
+  example: 'name = input()\nyear = int(input())\nprint("Hello", name)\nprint("Next year is", year + 1)',
+  exampleInput: "Ravi\n2026",
+  watch: [CS50(0, "functions variables"), CWH("input function typecasting"), CHUCK("variables expressions statements")],
+  problems: [
+    { id: "d5p1", title: "Greeter", type: "output",
+      prompt: "Read a name and print <code>Welcome, NAME!</code> (for input <code>Asha</code> print <code>Welcome, Asha!</code>).",
+      starter: "",
+      cases: [{ inputs: ["Asha"], expected: "Welcome, Asha!" }, { inputs: ["Karan"], expected: "Welcome, Karan!" }],
+      hint: 'There must be no space before the "!". Use + to join: "Welcome, " + name + "!"',
+      solution: 'name = input()\nprint("Welcome, " + name + "!")' },
+    { id: "d5p2", title: "Adder", type: "output",
+      prompt: "Read two whole numbers (one per line) and print their sum.",
+      starter: "",
+      cases: [{ inputs: ["12", "30"], expected: "42" }, { inputs: ["-5", "5"], expected: "0" }],
+      hint: "int(input()) twice. Without int() you'll get 1230 instead of 42.",
+      solution: "a = int(input())\nb = int(input())\nprint(a + b)" },
+    { id: "d5p3", title: "Rupees to paise", type: "output",
+      prompt: "Read an amount in rupees (a whole number) and print it in paise (1 rupee = 100 paise).",
+      starter: "",
+      cases: [{ inputs: ["45"], expected: "4500" }, { inputs: ["0"], expected: "0" }],
+      hint: "int(input()) * 100",
+      solution: "print(int(input()) * 100)" },
+  ]
+},
+{
+  day: 6, week: 1, title: "String tools and f-strings", topic: "methods & formatting",
+  lesson: `
+<p>Strings come with built-in tools called <b>methods</b>, used with a dot:</p>
+<pre>s = "  hello World  "
+s.upper()      # "  HELLO WORLD  "
+s.lower()      # "  hello world  "
+s.strip()      # "hello World"   (removes outer spaces)
+s.replace("o", "0")
+"banana".count("a")   # 3</pre>
+<p>Methods <b>don't change</b> the original string; they return a new one. Save it: <code>s = s.strip()</code>.</p>
+<p><b>f-strings</b> are the cleanest way to put variables inside text. Put <code>f</code> before the quote and variables inside <code>{ }</code>:</p>
+<pre>name = "Ravi"
+marks = 87.456
+print(f"{name} scored {marks:.1f}")   # Ravi scored 87.5</pre>
+<p><code>:.2f</code> means "show 2 decimal places". You'll use f-strings constantly.</p>`,
+  example: 'name = "  ravi sharma "\nclean = name.strip().title()\nprint(clean)\nprice = 1299.5\nprint(f"{clean} paid Rs {price:.2f}")',
+  watch: [CS50(0, "functions variables"), CWH("string methods f-strings"), CHUCK("strings")],
+  problems: [
+    { id: "d6p1", title: "Shout it", type: "output",
+      prompt: "Read a line of text and print it in capital letters with the spaces at both ends removed.",
+      starter: "",
+      cases: [{ inputs: ["  hello there  "], expected: "HELLO THERE" }, { inputs: ["python"], expected: "PYTHON" }],
+      hint: "You can chain methods: text.strip().upper()",
+      solution: "print(input().strip().upper())" },
+    { id: "d6p2", title: "Receipt line", type: "output",
+      prompt: "<code>item = \"Notebook\"</code>, <code>price = 45.5</code>, <code>qty = 3</code>. Using an f-string, print <code>3 x Notebook = Rs 136.50</code>",
+      starter: 'item = "Notebook"\nprice = 45.5\nqty = 3\n',
+      cases: [{ expected: "3 x Notebook = Rs 136.50" }],
+      hint: 'f"{qty} x {item} = Rs {price * qty:.2f}"',
+      solution: 'item = "Notebook"\nprice = 45.5\nqty = 3\nprint(f"{qty} x {item} = Rs {price * qty:.2f}")' },
+    { id: "d6p3", title: "Vowel counter (lite)", type: "output",
+      prompt: "Read a word (lowercase) and print how many times the letter <code>a</code> appears in it.",
+      starter: "",
+      cases: [{ inputs: ["banana"], expected: "3" }, { inputs: ["python"], expected: "0" }],
+      hint: 'word.count("a")',
+      solution: 'print(input().count("a"))' },
+  ]
+},
+{
+  day: 7, week: 1, title: "True or False", topic: "booleans & comparisons",
+  lesson: `
+<p>Programs make decisions by asking yes/no questions. The answer is a <b>boolean</b>: <code>True</code> or <code>False</code>.</p>
+<table class="ops"><tr><td><code>==</code></td><td>equal to (two equals signs! one = is "store")</td></tr>
+<tr><td><code>!=</code></td><td>not equal to</td></tr>
+<tr><td><code>&lt; &gt; &lt;= &gt;=</code></td><td>less, greater, less-or-equal, greater-or-equal</td></tr></table>
+<pre>age = 19
+print(age >= 18)       # True
+print(age == 20)       # False
+print("a" == "A")      # False (case matters)</pre>
+<p>Combine questions with <code>and</code>, <code>or</code>, <code>not</code>:</p>
+<pre>print(age > 12 and age < 20)   # teenager? True
+print(not True)                # False</pre>
+<p>Tomorrow you'll use these to make your program choose what to do. Today, get comfortable predicting True/False before you press Run.</p>`,
+  example: 'marks = 72\nprint(marks >= 40)\nprint(marks >= 40 and marks < 75)\nprint(marks % 2 == 0)',
+  watch: [CS50(1, "conditionals"), CWH("comparison logical operators"), CHUCK("conditional execution")],
+  problems: [
+    { id: "d7p1", title: "Is it even?", type: "output",
+      prompt: "Read a whole number and print <code>True</code> if it's even, otherwise <code>False</code>. (Print the result of a comparison; no if needed.)",
+      starter: "",
+      cases: [{ inputs: ["10"], expected: "True" }, { inputs: ["7"], expected: "False" }, { inputs: ["0"], expected: "True" }],
+      hint: "print(n % 2 == 0)",
+      solution: "n = int(input())\nprint(n % 2 == 0)" },
+    { id: "d7p2", title: "Teenager check", type: "output",
+      prompt: "Read an age and print <code>True</code> if it's from 13 to 19 inclusive, else <code>False</code>.",
+      starter: "",
+      cases: [{ inputs: ["13"], expected: "True" }, { inputs: ["19"], expected: "True" }, { inputs: ["20"], expected: "False" }, { inputs: ["12"], expected: "False" }],
+      hint: "age >= 13 and age <= 19. Python also allows 13 <= age <= 19.",
+      solution: "age = int(input())\nprint(13 <= age <= 19)" },
+    { id: "d7p3", title: "Same word?", type: "output",
+      prompt: "Read two words and print <code>True</code> if they're the same word ignoring capital letters (<code>Python</code> and <code>PYTHON</code> → True).",
+      starter: "",
+      cases: [{ inputs: ["Python", "PYTHON"], expected: "True" }, { inputs: ["cat", "cut"], expected: "False" }],
+      hint: "Compare a.lower() == b.lower()",
+      solution: "a = input()\nb = input()\nprint(a.lower() == b.lower())" },
+  ]
+},
+// ───────────────────────── WEEK 2 · Decisions and repetition
+{
+  day: 8, week: 2, title: "Making decisions", topic: "if / elif / else",
+  lesson: `
+<p><code>if</code> runs a block of code only when a condition is True:</p>
+<pre>marks = 72
+if marks >= 40:
+    print("Pass")
+else:
+    print("Fail")</pre>
+<p>Two things beginners miss: the <b>colon</b> <code>:</code> at the end of the if line, and the <b>indentation</b> (4 spaces) of the lines inside. Indentation is how Python knows which lines belong to the if. Press <b>Tab</b> in the editor to indent.</p>
+<p>For more than two choices, use <code>elif</code> ("else if"). Python checks from top to bottom and runs only the <b>first</b> branch that's True:</p>
+<pre>if marks >= 75:
+    print("Distinction")
+elif marks >= 60:
+    print("First division")
+elif marks >= 40:
+    print("Pass")
+else:
+    print("Fail")</pre>
+<p>Order matters: if you checked <code>>= 40</code> first, a 90 would print "Pass".</p>`,
+  example: 'marks = 68\nif marks >= 75:\n    print("Distinction")\nelif marks >= 60:\n    print("First division")\nelif marks >= 40:\n    print("Pass")\nelse:\n    print("Fail")',
+  watch: [CS50(1, "conditionals"), CWH("if else elif"), CHUCK("conditional execution")],
+  problems: [
+    { id: "d8p1", title: "Odd or even", type: "output",
+      prompt: "Read a number. Print <code>Even</code> or <code>Odd</code>.",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["4"], expected: "Even" }, { inputs: ["9"], expected: "Odd" }],
+      hint: "if n % 2 == 0: ... else: ...",
+      solution: 'n = int(input())\nif n % 2 == 0:\n    print("Even")\nelse:\n    print("Odd")' },
+    { id: "d8p2", title: "Grade calculator", type: "output",
+      prompt: "Read marks (0–100). Print <code>A</code> for 90+, <code>B</code> for 75–89, <code>C</code> for 50–74, <code>F</code> below 50.",
+      starter: "marks = int(input())\n",
+      cases: [{ inputs: ["95"], expected: "A" }, { inputs: ["90"], expected: "A" }, { inputs: ["75"], expected: "B" }, { inputs: ["60"], expected: "C" }, { inputs: ["49"], expected: "F" }],
+      hint: "Check from the highest grade down: if marks >= 90 / elif marks >= 75 / elif marks >= 50 / else.",
+      solution: 'marks = int(input())\nif marks >= 90:\n    print("A")\nelif marks >= 75:\n    print("B")\nelif marks >= 50:\n    print("C")\nelse:\n    print("F")' },
+    { id: "d8p3", title: "Bigger of two", type: "output",
+      prompt: "Read two numbers and print the bigger one. If they're equal, print <code>Equal</code>.",
+      starter: "",
+      cases: [{ inputs: ["3", "8"], expected: "8" }, { inputs: ["10", "2"], expected: "10" }, { inputs: ["5", "5"], expected: "Equal" }],
+      hint: "Three branches: a > b, b > a, else.",
+      solution: 'a = int(input())\nb = int(input())\nif a > b:\n    print(a)\nelif b > a:\n    print(b)\nelse:\n    print("Equal")' },
+  ]
+},
+{
+  day: 9, week: 2, title: "Combining conditions", topic: "and / or / nested if",
+  lesson: `
+<p>Real decisions often depend on several things. Use <code>and</code> when <b>all</b> must be true, <code>or</code> when <b>at least one</b> must be true:</p>
+<pre>age = 20
+has_licence = True
+if age >= 18 and has_licence:
+    print("You can drive")
+
+day = "Sunday"
+if day == "Saturday" or day == "Sunday":
+    print("Weekend!")</pre>
+<p>A common trap: <code>if day == "Saturday" or "Sunday"</code> is <b>wrong</b>; it's always True. Each side of <code>or</code> must be a full comparison.</p>
+<p>You can also put an if <b>inside</b> another if (nesting). Each level adds 4 more spaces:</p>
+<pre>if age >= 18:
+    if has_licence:
+        print("Drive")
+    else:
+        print("Get a licence first")</pre>
+<p>Leap year rule (classic interview question): divisible by 4, except centuries, unless divisible by 400.</p>`,
+  example: 'year = 2024\nif (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:\n    print(year, "is a leap year")\nelse:\n    print(year, "is not a leap year")',
+  watch: [CS50(1, "conditionals"), CWH("logical operators nested if"), CHUCK("conditional execution")],
+  problems: [
+    { id: "d9p1", title: "Leap year", type: "output",
+      prompt: "Read a year. Print <code>Leap</code> or <code>Not leap</code>. A year is leap if divisible by 4 and not by 100, <i>or</i> divisible by 400.",
+      starter: "year = int(input())\n",
+      cases: [{ inputs: ["2024"], expected: "Leap" }, { inputs: ["1900"], expected: "Not leap" }, { inputs: ["2000"], expected: "Leap" }, { inputs: ["2023"], expected: "Not leap" }],
+      hint: "(year % 4 == 0 and year % 100 != 0) or year % 400 == 0",
+      solution: 'year = int(input())\nif (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:\n    print("Leap")\nelse:\n    print("Not leap")' },
+    { id: "d9p2", title: "Largest of three", type: "output",
+      prompt: "Read three different numbers and print the largest. Don't use <code>max()</code>; practise with if/and.",
+      starter: "",
+      cases: [{ inputs: ["3", "9", "4"], expected: "9" }, { inputs: ["10", "2", "7"], expected: "10" }, { inputs: ["-1", "-5", "0"], expected: "0" }],
+      hint: "if a > b and a > c: a is largest. elif b > c: b. else: c.",
+      solution: "a = int(input())\nb = int(input())\nc = int(input())\nif a > b and a > c:\n    print(a)\nelif b > c:\n    print(b)\nelse:\n    print(c)" },
+    { id: "d9p3", title: "Movie ticket", type: "output",
+      prompt: "Read an age. Ticket price: under 5 → <code>0</code>, 5 to 17 → <code>100</code>, 60 and above → <code>120</code>, everyone else → <code>200</code>. Print the price.",
+      starter: "",
+      cases: [{ inputs: ["3"], expected: "0" }, { inputs: ["12"], expected: "100" }, { inputs: ["30"], expected: "200" }, { inputs: ["65"], expected: "120" }, { inputs: ["17"], expected: "100" }],
+      hint: "Four branches with elif. Think carefully about 5 and 17 (inclusive).",
+      solution: "age = int(input())\nif age < 5:\n    print(0)\nelif age <= 17:\n    print(100)\nelif age >= 60:\n    print(120)\nelse:\n    print(200)" },
+  ]
+},
+{
+  day: 10, week: 2, title: "Repeating with while", topic: "while loops",
+  lesson: `
+<p>A <b>loop</b> repeats code. <code>while</code> keeps repeating as long as its condition is True:</p>
+<pre>count = 1
+while count <= 5:
+    print(count)
+    count = count + 1
+print("Done")</pre>
+<p>Trace it by hand: count is 1, print, becomes 2 ... when count becomes 6, <code>6 <= 5</code> is False, so the loop stops and "Done" prints.</p>
+<p>If you forget <code>count = count + 1</code>, the condition stays True forever: an <b>infinite loop</b>. This site stops programs after a few seconds, so don't worry.</p>
+<p>While loops are best when you <b>don't know</b> how many times to repeat, like "keep halving until the number is below 1" or "keep asking until the password is right".</p>`,
+  example: 'n = 100\nsteps = 0\nwhile n > 1:\n    n = n // 2\n    steps += 1\nprint("Halved", steps, "times")',
+  watch: [CS50(2, "loops"), CWH("while loop"), CHUCK("loops and iteration")],
+  problems: [
+    { id: "d10p1", title: "Count down", type: "output",
+      prompt: "Read a number n and print n, n-1, ... down to 1, one per line, then print <code>Liftoff!</code>",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["3"], expected: "3\n2\n1\nLiftoff!" }, { inputs: ["1"], expected: "1\nLiftoff!" }],
+      hint: "while n >= 1: print(n); n -= 1. Print Liftoff! after the loop (not indented).",
+      solution: 'n = int(input())\nwhile n >= 1:\n    print(n)\n    n -= 1\nprint("Liftoff!")' },
+    { id: "d10p2", title: "Sum of digits", type: "output",
+      prompt: "Read a positive number and print the sum of its digits (<code>4827</code> → <code>21</code>). Use <code>% 10</code> and <code>// 10</code> in a while loop.",
+      starter: "n = int(input())\ntotal = 0\n",
+      cases: [{ inputs: ["4827"], expected: "21" }, { inputs: ["5"], expected: "5" }, { inputs: ["1000"], expected: "1" }],
+      hint: "While n > 0: add n % 10 to total, then n = n // 10 to chop off the last digit.",
+      solution: "n = int(input())\ntotal = 0\nwhile n > 0:\n    total += n % 10\n    n = n // 10\nprint(total)" },
+    { id: "d10p3", title: "Doubling savings", type: "output",
+      prompt: "You start with Rs 1 and it doubles every day. Read a target amount and print how many days until you have <b>at least</b> the target.",
+      starter: "target = int(input())\n",
+      cases: [{ inputs: ["100"], expected: "7" }, { inputs: ["1"], expected: "0" }, { inputs: ["1024"], expected: "10" }],
+      hint: "money = 1, days = 0. While money < target: double money, add 1 to days.",
+      solution: "target = int(input())\nmoney = 1\ndays = 0\nwhile money < target:\n    money *= 2\n    days += 1\nprint(days)" },
+  ]
+},
+{
+  day: 11, week: 2, title: "Repeating with for", topic: "for loops & range()",
+  lesson: `
+<p>When you know how many times to repeat, <code>for</code> is simpler. <code>range()</code> produces a sequence of numbers:</p>
+<pre>for i in range(5):        # 0, 1, 2, 3, 4
+    print(i)
+
+for i in range(1, 6):     # 1 to 5 (the end is NOT included)
+    print(i)
+
+for i in range(0, 20, 5): # 0, 5, 10, 15 (step of 5)
+    print(i)</pre>
+<p>The rule: <code>range(start, stop)</code> goes up to but <b>not including</b> stop. For 1 to n, write <code>range(1, n + 1)</code>.</p>
+<p><code>for</code> also walks through each character of a string:</p>
+<pre>for ch in "abc":
+    print(ch)</pre>
+<p><code>print(x, end=" ")</code> prints without starting a new line, useful for printing things side by side.</p>`,
+  example: 'for i in range(1, 11):\n    print(7, "x", i, "=", 7 * i)',
+  watch: [CS50(2, "loops"), CWH("for loop range"), CHUCK("loops and iteration")],
+  problems: [
+    { id: "d11p1", title: "Multiplication table", type: "output",
+      prompt: "Read n and print its table from 1 to 10 in the form <code>n x i = result</code>.",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["3"], expected: "3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30" }],
+      hint: 'for i in range(1, 11): print(f"{n} x {i} = {n * i}")',
+      solution: 'n = int(input())\nfor i in range(1, 11):\n    print(f"{n} x {i} = {n * i}")' },
+    { id: "d11p2", title: "Even numbers", type: "output",
+      prompt: "Read n and print all even numbers from 2 up to n (inclusive) on one line separated by spaces.",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["10"], expected: "2 4 6 8 10" }, { inputs: ["7"], expected: "2 4 6" }],
+      hint: 'range(2, n + 1, 2), and print(i, end=" "). A trailing space at the end is fine.',
+      solution: 'n = int(input())\nfor i in range(2, n + 1, 2):\n    print(i, end=" ")' },
+    { id: "d11p3", title: "Spell it out", type: "output",
+      prompt: "Read a word and print each letter on its own line.",
+      starter: "",
+      cases: [{ inputs: ["code"], expected: "c\no\nd\ne" }],
+      hint: "for ch in word: print(ch)",
+      solution: "word = input()\nfor ch in word:\n    print(ch)" },
+  ]
+},
+{
+  day: 12, week: 2, title: "Loop patterns", topic: "accumulators & counters",
+  lesson: `
+<p>Most loop problems use one of a few patterns. Learn them and you can solve hundreds of problems.</p>
+<p><b>1. Accumulator</b>: start at 0, add inside the loop.</p>
+<pre>total = 0
+for i in range(1, 101):
+    total += i
+print(total)   # 5050</pre>
+<p><b>2. Counter</b>: count how many things match a condition.</p>
+<pre>count = 0
+for ch in "programming":
+    if ch in "aeiou":
+        count += 1
+print(count)   # 3</pre>
+<p><b>3. Product</b>: start at <b>1</b> (not 0!) and multiply. That's how factorial works: 5! = 1×2×3×4×5.</p>
+<p><b>4. Best-so-far</b>: keep track of the biggest/smallest seen.</p>
+<p>The key habit: set up your variable <b>before</b> the loop, update it <b>inside</b>, print <b>after</b>.</p>`,
+  example: 'fact = 1\nfor i in range(1, 6):\n    fact *= i\n    print("after", i, "fact is", fact)\nprint("5! =", fact)',
+  watch: [CS50(2, "loops"), CWH("loops practice set"), CHUCK("loop idioms")],
+  problems: [
+    { id: "d12p1", title: "Sum 1 to n", type: "output",
+      prompt: "Read n and print 1 + 2 + ... + n using a loop.",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["100"], expected: "5050" }, { inputs: ["1"], expected: "1" }, { inputs: ["10"], expected: "55" }],
+      hint: "total = 0 before the loop; total += i inside it.",
+      solution: "n = int(input())\ntotal = 0\nfor i in range(1, n + 1):\n    total += i\nprint(total)" },
+    { id: "d12p2", title: "Factorial", type: "output",
+      prompt: "Read n and print n! (factorial). 0! is 1.",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["5"], expected: "120" }, { inputs: ["0"], expected: "1" }, { inputs: ["10"], expected: "3628800" }],
+      hint: "Start fact = 1 and multiply by each i from 1 to n.",
+      solution: "n = int(input())\nfact = 1\nfor i in range(1, n + 1):\n    fact *= i\nprint(fact)" },
+    { id: "d12p3", title: "Count vowels", type: "output",
+      prompt: "Read a line of text and print how many vowels (a, e, i, o, u; upper or lower case) it has.",
+      starter: "",
+      cases: [{ inputs: ["Programming"], expected: "3" }, { inputs: ["AEIOU xyz"], expected: "5" }, { inputs: ["rhythm"], expected: "0" }],
+      hint: 'Loop over text.lower(); if ch in "aeiou": count += 1',
+      solution: 'text = input().lower()\ncount = 0\nfor ch in text:\n    if ch in "aeiou":\n        count += 1\nprint(count)' },
+  ]
+},
+{
+  day: 13, week: 2, title: "Loops inside loops", topic: "nested loops & patterns",
+  lesson: `
+<p>A loop inside a loop runs the inner loop <b>completely</b> for every single step of the outer loop. Think of a clock: the minute hand goes all the way round for each hour.</p>
+<pre>for row in range(1, 4):
+    for col in range(1, 4):
+        print(row * col, end=" ")
+    print()     # new line after each row</pre>
+<p>Output:</p>
+<pre>1 2 3
+2 4 6
+3 6 9</pre>
+<p>Pattern printing (stars, pyramids) is the classic nested-loop practice in Indian college labs and placement tests. The trick: figure out <b>how many</b> things go on row <i>i</i>. Often it's just <i>i</i>.</p>
+<pre>for i in range(1, 5):
+    print("*" * i)</pre>
+<p>String multiplication (<code>"*" * i</code>) can replace an inner loop in simple cases.</p>`,
+  example: 'n = 4\nfor i in range(1, n + 1):\n    print(" " * (n - i) + "*" * (2 * i - 1))',
+  watch: [CS50(2, "loops"), CWH("pattern printing nested loops"), CHUCK("loops and iteration")],
+  problems: [
+    { id: "d13p1", title: "Right triangle", type: "output",
+      prompt: "Read n and print a triangle of stars with n rows; row i has i stars.<pre>*\n**\n***</pre>",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["3"], expected: "*\n**\n***" }, { inputs: ["5"], expected: "*\n**\n***\n****\n*****" }],
+      hint: 'for i in range(1, n + 1): print("*" * i)',
+      solution: 'n = int(input())\nfor i in range(1, n + 1):\n    print("*" * i)' },
+    { id: "d13p2", title: "Number staircase", type: "output",
+      prompt: "Read n and print rows where row i contains the numbers 1 to i joined with no spaces.<pre>1\n12\n123</pre>",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["3"], expected: "1\n12\n123" }, { inputs: ["5"], expected: "1\n12\n123\n1234\n12345" }],
+      hint: 'Inner loop: for j in range(1, i + 1): print(j, end=""). Then print() for the new line.',
+      solution: 'n = int(input())\nfor i in range(1, n + 1):\n    for j in range(1, i + 1):\n        print(j, end="")\n    print()' },
+    { id: "d13p3", title: "Pyramid", type: "output",
+      prompt: "Read n and print a centred pyramid with n rows (row i has n−i leading spaces and 2i−1 stars).<pre>  *\n ***\n*****</pre>",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["3"], expected: "  *\n ***\n*****" }, { inputs: ["1"], expected: "*" }],
+      hint: 'print(" " * (n - i) + "*" * (2 * i - 1))',
+      solution: 'n = int(input())\nfor i in range(1, n + 1):\n    print(" " * (n - i) + "*" * (2 * i - 1))' },
+  ]
+},
+{
+  day: 14, week: 2, title: "break, continue and a mini project", topic: "loop control",
+  lesson: `
+<p><code>break</code> exits a loop immediately. <code>continue</code> skips the rest of this round and jumps to the next.</p>
+<pre>for n in range(1, 20):
+    if n % 7 == 0:
+        print("First multiple of 7:", n)
+        break
+
+for n in range(1, 8):
+    if n == 4:
+        continue      # skip 4
+    print(n, end=" ")   # 1 2 3 5 6 7</pre>
+<p><b>Prime numbers</b> are the classic use of break: to test if n is prime, try dividing by 2, 3, 4 ... If anything divides evenly, it's not prime; stop looking.</p>
+<p>You only need to check up to the square root of n (if n = a×b, one of them is ≤ √n), which makes the check much faster: <code>while d * d <= n</code>.</p>
+<p>Today's last problem is a mini guessing game. You've now covered two weeks of real programming: variables, input, decisions and loops.</p>`,
+  example: 'n = 29\nis_prime = n > 1\nfor d in range(2, n):\n    if n % d == 0:\n        is_prime = False\n        break\nprint(n, "prime?", is_prime)',
+  watch: [CS50(2, "loops"), CWH("break continue"), CHUCK("loops and iteration")],
+  problems: [
+    { id: "d14p1", title: "Prime check", type: "output",
+      prompt: "Read n (n ≥ 1). Print <code>Prime</code> or <code>Not prime</code>. (1 is not prime.)",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["29"], expected: "Prime" }, { inputs: ["1"], expected: "Not prime" }, { inputs: ["2"], expected: "Prime" }, { inputs: ["91"], expected: "Not prime" }],
+      hint: "Assume prime (if n > 1). Loop d from 2 to n-1; if n % d == 0, mark not prime and break.",
+      solution: 'n = int(input())\nprime = n > 1\nd = 2\nwhile d * d <= n:\n    if n % d == 0:\n        prime = False\n        break\n    d += 1\nprint("Prime" if prime else "Not prime")' },
+    { id: "d14p2", title: "Skip the multiples of 3", type: "output",
+      prompt: "Read n and print numbers 1 to n on one line (space separated), skipping multiples of 3. Use <code>continue</code>.",
+      starter: "n = int(input())\n",
+      cases: [{ inputs: ["10"], expected: "1 2 4 5 7 8 10" }],
+      hint: 'if i % 3 == 0: continue, then print(i, end=" ")',
+      solution: 'n = int(input())\nfor i in range(1, n + 1):\n    if i % 3 == 0:\n        continue\n    print(i, end=" ")' },
+    { id: "d14p3", title: "Guessing game", type: "output",
+      prompt: "The secret number is <code>42</code>. Keep reading guesses. For each guess print <code>Too low</code>, <code>Too high</code>, or <code>Correct! Guesses: N</code> (N = how many guesses it took) and stop.",
+      starter: "secret = 42\nguesses = 0\n",
+      cases: [{ inputs: ["50", "30", "42"], expected: "Too high\nToo low\nCorrect! Guesses: 3" }, { inputs: ["42"], expected: "Correct! Guesses: 1" }],
+      hint: "while True: read a guess, add 1 to guesses, compare; break when correct.",
+      solution: 'secret = 42\nguesses = 0\nwhile True:\n    g = int(input())\n    guesses += 1\n    if g < secret:\n        print("Too low")\n    elif g > secret:\n        print("Too high")\n    else:\n        print(f"Correct! Guesses: {guesses}")\n        break' },
+  ]
+},
+// ───────────────────────── WEEK 3 · Collections and functions
+{
+  day: 15, week: 3, title: "Lists", topic: "creating & indexing lists",
+  lesson: `
+<p>A <b>list</b> holds many values in order, inside square brackets:</p>
+<pre>marks = [78, 85, 92, 64]
+names = ["Ravi", "Asha", "Karan"]
+empty = []</pre>
+<p>Index works like strings: <code>marks[0]</code> is 78, <code>marks[-1]</code> is 64. Unlike strings, lists can be <b>changed</b>:</p>
+<pre>marks[3] = 70            # replace
+marks.append(88)         # add to the end
+print(len(marks))        # 5</pre>
+<p>Useful built-ins: <code>sum(marks)</code>, <code>max(marks)</code>, <code>min(marks)</code>, <code>sorted(marks)</code>.</p>
+<p>Check membership with <code>in</code>: <code>"Asha" in names</code> → True.</p>
+<p>To build a list from input, a common pattern is reading one line of space-separated numbers:</p>
+<pre>nums = input().split()          # ["3", "8", "1"]  (strings!)
+nums = [int(x) for x in nums]   # [3, 8, 1]</pre>
+<p>That second line is a list comprehension; you'll master it on day 24. For now, copy the pattern.</p>`,
+  example: 'marks = [78, 85, 92, 64]\nmarks.append(88)\nprint(marks)\nprint("Highest:", max(marks))\nprint("Average:", sum(marks) / len(marks))',
+  watch: [CS50(2, "loops lists"), CWH("lists and tuples"), CHUCK("lists")],
+  problems: [
+    { id: "d15p1", title: "Class stats", type: "output",
+      prompt: "Read one line of space-separated marks. Print the highest, the lowest, and the average (2 decimals), each on its own line.",
+      starter: "nums = [int(x) for x in input().split()]\n",
+      cases: [{ inputs: ["78 85 92 64"], expected: "92\n64\n79.75" }, { inputs: ["50 50"], expected: "50\n50\n50.00" }],
+      hint: 'max(nums), min(nums), then print(f"{sum(nums) / len(nums):.2f}")',
+      solution: 'nums = [int(x) for x in input().split()]\nprint(max(nums))\nprint(min(nums))\nprint(f"{sum(nums) / len(nums):.2f}")' },
+    { id: "d15p2", title: "Shopping list", type: "output",
+      prompt: "Start with <code>items = [\"milk\", \"bread\"]</code>. Read one more item, append it, then print the list and its length on separate lines.",
+      starter: 'items = ["milk", "bread"]\n',
+      cases: [{ inputs: ["eggs"], expected: "['milk', 'bread', 'eggs']\n3" }],
+      hint: "items.append(input()), then print(items) and print(len(items)).",
+      solution: 'items = ["milk", "bread"]\nitems.append(input())\nprint(items)\nprint(len(items))' },
+    { id: "d15p3", title: "Is it on the list?", type: "output",
+      prompt: "<code>attendance = [\"Ravi\", \"Asha\", \"Karan\", \"Neha\"]</code>. Read a name and print <code>Present</code> or <code>Absent</code>.",
+      starter: 'attendance = ["Ravi", "Asha", "Karan", "Neha"]\n',
+      cases: [{ inputs: ["Karan"], expected: "Present" }, { inputs: ["Vikram"], expected: "Absent" }],
+      hint: "if name in attendance:",
+      solution: 'attendance = ["Ravi", "Asha", "Karan", "Neha"]\nif input() in attendance:\n    print("Present")\nelse:\n    print("Absent")' },
+  ]
+},
+{
+  day: 16, week: 3, title: "Looping over lists", topic: "list methods & traversal",
+  lesson: `
+<p>A <code>for</code> loop visits each item of a list directly:</p>
+<pre>prices = [120, 45, 300, 80]
+for p in prices:
+    print(p)</pre>
+<p>When you also need the position, use <code>enumerate</code>:</p>
+<pre>for i, p in enumerate(prices):
+    print(i, p)</pre>
+<p>More list methods:</p>
+<table class="ops"><tr><td><code>lst.insert(0, x)</code></td><td>insert at a position</td></tr>
+<tr><td><code>lst.remove(x)</code></td><td>remove the first x</td></tr>
+<tr><td><code>lst.pop()</code></td><td>remove and return the last item</td></tr>
+<tr><td><code>lst.sort()</code></td><td>sort in place (changes the list)</td></tr>
+<tr><td><code>lst.reverse()</code></td><td>reverse in place</td></tr>
+<tr><td><code>lst.index(x)</code></td><td>position of x</td></tr></table>
+<p>Building a <b>new</b> list with a loop is a key pattern: start with <code>[]</code>, <code>append</code> what you want.</p>
+<pre>cheap = []
+for p in prices:
+    if p < 100:
+        cheap.append(p)</pre>`,
+  example: 'prices = [120, 45, 300, 80]\ncheap = []\nfor p in prices:\n    if p < 100:\n        cheap.append(p)\nprint(cheap)\nfor i, p in enumerate(prices):\n    print(i, p)',
+  watch: [CS50(2, "loops lists"), CWH("list methods"), CHUCK("lists")],
+  problems: [
+    { id: "d16p1", title: "Only the passes", type: "output",
+      prompt: "Read space-separated marks. Print a list of only the marks that are 40 or above, in the same order.",
+      starter: "marks = [int(x) for x in input().split()]\n",
+      cases: [{ inputs: ["35 72 40 18 90"], expected: "[72, 40, 90]" }, { inputs: ["10 20"], expected: "[]" }],
+      hint: "passed = [] ; loop ; if m >= 40: passed.append(m)",
+      solution: "marks = [int(x) for x in input().split()]\npassed = []\nfor m in marks:\n    if m >= 40:\n        passed.append(m)\nprint(passed)" },
+    { id: "d16p2", title: "Max without max()", type: "output",
+      prompt: "Read space-separated numbers and print the largest, <b>without</b> using <code>max()</code> or <code>sort</code>. Use the best-so-far pattern.",
+      starter: "nums = [int(x) for x in input().split()]\n",
+      cases: [{ inputs: ["4 17 9 3"], expected: "17" }, { inputs: ["-8 -3 -12"], expected: "-3" }],
+      hint: "best = nums[0], then for each n: if n > best: best = n. Starting at 0 would fail for all-negative lists.",
+      solution: "nums = [int(x) for x in input().split()]\nbest = nums[0]\nfor n in nums:\n    if n > best:\n        best = n\nprint(best)" },
+    { id: "d16p3", title: "Position finder", type: "output",
+      prompt: "Line 1: space-separated words. Line 2: a word to find. Print every index where it appears, one per line. If it never appears, print <code>Not found</code>.",
+      starter: "",
+      cases: [{ inputs: ["a b a c a", "a"], expected: "0\n2\n4" }, { inputs: ["x y z", "q"], expected: "Not found" }],
+      hint: "Use enumerate and a found flag (found = False before the loop).",
+      solution: 'words = input().split()\ntarget = input()\nfound = False\nfor i, w in enumerate(words):\n    if w == target:\n        print(i)\n        found = True\nif not found:\n    print("Not found")' },
+  ]
+},
+{
+  day: 17, week: 3, title: "Slicing", topic: "slices of strings & lists",
+  lesson: `
+<p>A <b>slice</b> takes a piece of a string or list: <code>seq[start:stop]</code>. Like range, stop is <b>not included</b>.</p>
+<pre>s = "Programming"
+s[0:3]     # "Pro"
+s[3:]      # "gramming"   (to the end)
+s[:4]      # "Prog"       (from the start)
+s[-3:]     # "ing"        (last 3)
+s[::2]     # "Pormig"     (every 2nd)
+s[::-1]    # "gnimmargorP" (reversed!)</pre>
+<p>Slices work identically on lists: <code>[10, 20, 30, 40][1:3]</code> → <code>[20, 30]</code>.</p>
+<p><code>[::-1]</code> is the one-line way to reverse, which makes <b>palindrome</b> checks trivial: a word is a palindrome if <code>word == word[::-1]</code>.</p>
+<p>Slicing never errors when you go past the end; <code>"abc"[1:100]</code> is just <code>"bc"</code>.</p>`,
+  example: 's = "Programming"\nprint(s[0:3], s[3:], s[-3:])\nprint(s[::-1])\nnums = [10, 20, 30, 40, 50]\nprint(nums[1:4], nums[::-1])',
+  watch: [CS50(2, "loops lists"), CWH("string slicing"), CHUCK("strings")],
+  problems: [
+    { id: "d17p1", title: "Palindrome", type: "output",
+      prompt: "Read a word and print <code>Yes</code> if it reads the same backwards (ignore capitals), otherwise <code>No</code>.",
+      starter: "",
+      cases: [{ inputs: ["Madam"], expected: "Yes" }, { inputs: ["python"], expected: "No" }, { inputs: ["racecar"], expected: "Yes" }],
+      hint: "w = input().lower(); compare w == w[::-1]",
+      solution: 'w = input().lower()\nprint("Yes" if w == w[::-1] else "No")' },
+    { id: "d17p2", title: "Initials", type: "output",
+      prompt: "Read a full name (two or more words) and print the initials in capitals with dots: <code>ravi kumar sharma</code> → <code>R.K.S.</code>",
+      starter: "",
+      cases: [{ inputs: ["ravi kumar sharma"], expected: "R.K.S." }, { inputs: ["Asha Rao"], expected: "A.R." }],
+      hint: 'Loop over name.split(); add w[0].upper() + "." to a result string.',
+      solution: 'result = ""\nfor w in input().split():\n    result += w[0].upper() + "."\nprint(result)' },
+    { id: "d17p3", title: "Mask the phone", type: "output",
+      prompt: "Read a 10-digit phone number and print it with all but the last 4 digits replaced by <code>*</code>: <code>9876543210</code> → <code>******3210</code>",
+      starter: "",
+      cases: [{ inputs: ["9876543210"], expected: "******3210" }],
+      hint: '"*" * (len(p) - 4) + p[-4:]',
+      solution: 'p = input()\nprint("*" * (len(p) - 4) + p[-4:])' },
+  ]
+},
+{
+  day: 18, week: 3, title: "Functions", topic: "def & parameters",
+  lesson: `
+<p>A <b>function</b> is a named, reusable block of code. You've used many: <code>print</code>, <code>len</code>, <code>input</code>. Now you write your own with <code>def</code>:</p>
+<pre>def greet(name):
+    print("Hello,", name)
+
+greet("Ravi")
+greet("Asha")</pre>
+<p><code>name</code> is a <b>parameter</b>, a variable that gets whatever value you pass in (the <b>argument</b>). A function can take several: <code>def area(length, width):</code>.</p>
+<p>Defining a function does nothing on its own; the code inside runs only when you <b>call</b> it.</p>
+<p><b>From today, problems change format:</b> you'll write a function, and the checker calls it with different inputs. So you don't read input() or print; you just write the function. Tomorrow you'll learn <code>return</code>, which is how a function hands back its answer.</p>
+<p>Functions are how real programs are organised: each one does one job and has a clear name.</p>`,
+  example: 'def greet(name):\n    print("Hello,", name)\n\ndef show_table(n):\n    for i in range(1, 4):\n        print(n, "x", i, "=", n * i)\n\ngreet("Ravi")\nshow_table(5)',
+  watch: [CS50(0, "functions"), CWH("functions"), CHUCK("functions")],
+  problems: [
+    { id: "d18p1", title: "Line of stars", type: "output",
+      prompt: "Write a function <code>stars(n)</code> that prints n stars on one line. The calls below are already written; just complete the function.",
+      starter: "def stars(n):\n    # your code here\n    pass\n\nstars(3)\nstars(5)\nstars(1)",
+      cases: [{ expected: "***\n*****\n*" }],
+      hint: 'Replace pass with print("*" * n)',
+      solution: 'def stars(n):\n    print("*" * n)\n\nstars(3)\nstars(5)\nstars(1)' },
+    { id: "d18p2", title: "Box", type: "output",
+      prompt: "Write <code>box(width, height)</code> that prints a rectangle of <code>#</code> characters.",
+      starter: "def box(width, height):\n    pass\n\nbox(4, 2)\nbox(2, 3)",
+      cases: [{ expected: "####\n####\n##\n##\n##" }],
+      hint: 'for _ in range(height): print("#" * width)',
+      solution: 'def box(width, height):\n    for _ in range(height):\n        print("#" * width)\n\nbox(4, 2)\nbox(2, 3)' },
+    { id: "d18p3", title: "Report card line", type: "output",
+      prompt: "Write <code>report(name, marks)</code> that prints <code>NAME: MARKS - PASS</code> or <code>- FAIL</code> (pass is 40+). Name in capitals.",
+      starter: "def report(name, marks):\n    pass\n\nreport(\"ravi\", 72)\nreport(\"asha\", 35)",
+      cases: [{ expected: "RAVI: 72 - PASS\nASHA: 35 - FAIL" }],
+      hint: 'result = "PASS" if marks >= 40 else "FAIL"; then an f-string.',
+      solution: 'def report(name, marks):\n    result = "PASS" if marks >= 40 else "FAIL"\n    print(f"{name.upper()}: {marks} - {result}")\n\nreport("ravi", 72)\nreport("asha", 35)' },
+  ]
+},
+{
+  day: 19, week: 3, title: "Returning values", topic: "return",
+  lesson: `
+<p><code>print</code> shows something on screen. <code>return</code> <b>hands a value back</b> to whoever called the function, so they can store it, use it in maths, or pass it to another function.</p>
+<pre>def square(n):
+    return n * n
+
+x = square(4)          # x is 16
+print(square(3) + 1)   # 10</pre>
+<p>A function that only prints can't be used in a calculation; <code>square(4) + 1</code> would fail if square just printed. That's why nearly all useful functions <b>return</b>.</p>
+<p><code>return</code> also <b>ends</b> the function immediately, which is handy:</p>
+<pre>def is_even(n):
+    if n % 2 == 0:
+        return True
+    return False</pre>
+<p>(Shorter: <code>return n % 2 == 0</code>.)</p>
+<p><b>How checking works now:</b> the checker calls your function, e.g. <code>square(5)</code>, and compares what you <b>return</b> with the expected value. Don't use <code>input()</code> in these; the values arrive as parameters.</p>`,
+  example: 'def square(n):\n    return n * n\n\ndef is_even(n):\n    return n % 2 == 0\n\nprint(square(4) + square(3))\nprint(is_even(10), is_even(7))',
+  watch: [CS50(0, "functions return values"), CWH("functions return"), CHUCK("functions")],
+  problems: [
+    { id: "d19p1", title: "Area of a circle", type: "func", fn: "circle_area",
+      prompt: "Write <code>circle_area(r)</code> that returns the area πr², rounded to 2 decimals. Use 3.14159 for π.",
+      starter: "def circle_area(r):\n    pass\n",
+      tests: [["circle_area(1)", "3.14"], ["circle_area(2.5)", "19.63"], ["circle_area(0)", "0.0"]],
+      hint: "return round(3.14159 * r * r, 2)",
+      solution: "def circle_area(r):\n    return round(3.14159 * r * r, 2)" },
+    { id: "d19p2", title: "Celsius to Fahrenheit", type: "func", fn: "to_f",
+      prompt: "Write <code>to_f(c)</code> that returns the temperature in Fahrenheit: F = C × 9/5 + 32.",
+      starter: "def to_f(c):\n    pass\n",
+      tests: [["to_f(0)", "32.0"], ["to_f(100)", "212.0"], ["to_f(-40)", "-40.0"], ["to_f(25)", "77.0"]],
+      hint: "return c * 9 / 5 + 32",
+      solution: "def to_f(c):\n    return c * 9 / 5 + 32" },
+    { id: "d19p3", title: "Is prime (function)", type: "func", fn: "is_prime",
+      prompt: "Write <code>is_prime(n)</code> that returns <code>True</code> or <code>False</code>. Reuse your day-14 logic.",
+      starter: "def is_prime(n):\n    pass\n",
+      tests: [["is_prime(2)", "True"], ["is_prime(1)", "False"], ["is_prime(97)", "True"], ["is_prime(100)", "False"], ["is_prime(49)", "False"]],
+      hint: "if n < 2: return False. Loop d while d*d <= n; if n % d == 0: return False. After the loop: return True.",
+      solution: "def is_prime(n):\n    if n < 2:\n        return False\n    d = 2\n    while d * d <= n:\n        if n % d == 0:\n            return False\n        d += 1\n    return True" },
+  ]
+},
+{
+  day: 20, week: 3, title: "Functions, level 2", topic: "defaults, many returns, scope",
+  lesson: `
+<p><b>Default values</b> make a parameter optional:</p>
+<pre>def power(base, exp=2):
+    return base ** exp
+
+power(5)      # 25
+power(2, 10)  # 1024</pre>
+<p><b>Returning several values</b>: separate them with commas and unpack when calling:</p>
+<pre>def min_max(nums):
+    return min(nums), max(nums)
+
+lo, hi = min_max([4, 9, 1])</pre>
+<p><b>Scope</b>: variables created inside a function exist only inside it. That's a feature; functions don't accidentally break each other's variables.</p>
+<p><b>Functions calling functions</b> is how you build big things from small, tested pieces:</p>
+<pre>def is_even(n):
+    return n % 2 == 0
+
+def count_evens(nums):
+    count = 0
+    for n in nums:
+        if is_even(n):
+            count += 1
+    return count</pre>`,
+  example: 'def power(base, exp=2):\n    return base ** exp\n\ndef min_max(nums):\n    return min(nums), max(nums)\n\nprint(power(5), power(2, 10))\nlo, hi = min_max([4, 9, 1])\nprint(lo, hi)',
+  watch: [CS50(0, "functions"), CWH("default arguments"), CHUCK("functions")],
+  problems: [
+    { id: "d20p1", title: "Discount", type: "func", fn: "final_price",
+      prompt: "Write <code>final_price(price, discount=10)</code> returning the price after a percentage discount, rounded to 2 decimals. If no discount is given, use 10%.",
+      starter: "def final_price(price, discount=10):\n    pass\n",
+      tests: [["final_price(500)", "450.0"], ["final_price(999, 25)", "749.25"], ["final_price(100, 0)", "100.0"]],
+      hint: "return round(price * (100 - discount) / 100, 2)",
+      solution: "def final_price(price, discount=10):\n    return round(price * (100 - discount) / 100, 2)" },
+    { id: "d20p2", title: "Stats pack", type: "func", fn: "stats",
+      prompt: "Write <code>stats(nums)</code> that returns three values: smallest, largest, and average rounded to 1 decimal.",
+      starter: "def stats(nums):\n    pass\n",
+      tests: [["stats([4, 9, 1, 6])", "(1, 9, 5.0)"], ["stats([7])", "(7, 7, 7.0)"], ["stats([2, 3])", "(2, 3, 2.5)"]],
+      hint: "return min(nums), max(nums), round(sum(nums) / len(nums), 1)",
+      solution: "def stats(nums):\n    return min(nums), max(nums), round(sum(nums) / len(nums), 1)" },
+    { id: "d20p3", title: "Primes up to n", type: "func", fn: "primes_upto",
+      prompt: "Write <code>primes_upto(n)</code> returning a list of all primes ≤ n. Write a helper <code>is_prime</code> and call it.",
+      starter: "def is_prime(k):\n    pass\n\ndef primes_upto(n):\n    pass\n",
+      tests: [["primes_upto(10)", "[2, 3, 5, 7]"], ["primes_upto(1)", "[]"], ["primes_upto(30)", "[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]"]],
+      hint: "result = []; for k in range(2, n + 1): if is_prime(k): result.append(k)",
+      solution: "def is_prime(k):\n    if k < 2:\n        return False\n    d = 2\n    while d * d <= k:\n        if k % d == 0:\n            return False\n        d += 1\n    return True\n\ndef primes_upto(n):\n    result = []\n    for k in range(2, n + 1):\n        if is_prime(k):\n            result.append(k)\n    return result" },
+  ]
+},
+{
+  day: 21, week: 3, title: "Tuples and sets", topic: "tuples, sets",
+  lesson: `
+<p>A <b>tuple</b> is like a list that can't be changed. Use round brackets. Good for fixed groups like coordinates or (name, marks) pairs:</p>
+<pre>point = (3, 4)
+x, y = point       # unpacking
+student = ("Ravi", 87)</pre>
+<p>A <b>set</b> is an unordered collection with <b>no duplicates</b>. Perfect for "unique" problems:</p>
+<pre>nums = [3, 1, 3, 2, 1]
+unique = set(nums)        # {1, 2, 3}
+print(len(unique))        # 3</pre>
+<p>Set operations answer "who is in both?" questions:</p>
+<pre>a = {"Ravi", "Asha", "Karan"}
+b = {"Asha", "Neha"}
+a & b    # both:   {"Asha"}
+a | b    # either: all four
+a - b    # in a but not b</pre>
+<p>Sets don't keep order, so wrap them in <code>sorted()</code> when you need a predictable output. Checking <code>x in a_set</code> is also very fast.</p>`,
+  example: 'nums = [3, 1, 3, 2, 1]\nprint(sorted(set(nums)))\ncricket = {"Ravi", "Asha", "Karan"}\nchess = {"Asha", "Neha", "Karan"}\nprint(sorted(cricket & chess))\nprint(sorted(cricket - chess))',
+  watch: [CS50(2, "loops"), CWH("sets tuples"), CHUCK("tuples")],
+  problems: [
+    { id: "d21p1", title: "Remove duplicates", type: "func", fn: "unique_sorted",
+      prompt: "Write <code>unique_sorted(nums)</code> that returns a sorted list with duplicates removed.",
+      starter: "def unique_sorted(nums):\n    pass\n",
+      tests: [["unique_sorted([3, 1, 3, 2, 1])", "[1, 2, 3]"], ["unique_sorted([])", "[]"], ["unique_sorted([5, 5, 5])", "[5]"]],
+      hint: "return sorted(set(nums))",
+      solution: "def unique_sorted(nums):\n    return sorted(set(nums))" },
+    { id: "d21p2", title: "Common friends", type: "func", fn: "common",
+      prompt: "Write <code>common(a, b)</code> taking two lists of names and returning a sorted list of names in both.",
+      starter: "def common(a, b):\n    pass\n",
+      tests: [["common(['Ravi','Asha','Karan'], ['Asha','Neha','Karan'])", "['Asha', 'Karan']"], ["common(['x'], ['y'])", "[]"]],
+      hint: "sorted(set(a) & set(b))",
+      solution: "def common(a, b):\n    return sorted(set(a) & set(b))" },
+    { id: "d21p3", title: "Distance between points", type: "func", fn: "distance",
+      prompt: "Write <code>distance(p, q)</code> where p and q are tuples <code>(x, y)</code>. Return the straight-line distance rounded to 2 decimals. √ is <code>** 0.5</code>.",
+      starter: "def distance(p, q):\n    pass\n",
+      tests: [["distance((0, 0), (3, 4))", "5.0"], ["distance((1, 1), (1, 1))", "0.0"], ["distance((-1, 2), (4, -3))", "7.07"]],
+      hint: "Unpack: x1, y1 = p. Then ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5",
+      solution: "def distance(p, q):\n    x1, y1 = p\n    x2, y2 = q\n    return round(((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5, 2)" },
+  ]
+},
+// ───────────────────────── WEEK 4 · Real-world Python
+{
+  day: 22, week: 4, title: "Dictionaries", topic: "key → value",
+  lesson: `
+<p>A <b>dictionary</b> maps <b>keys</b> to <b>values</b>, like a real dictionary maps words to meanings. Use curly braces:</p>
+<pre>phone = {"Ravi": "98xxxx", "Asha": "91xxxx"}
+marks = {"maths": 88, "physics": 76}
+
+print(marks["maths"])        # 88
+marks["chemistry"] = 81      # add or update
+print(len(marks))            # 3</pre>
+<p>Asking for a key that doesn't exist crashes with <code>KeyError</code>. Use <code>.get()</code> for a safe default: <code>marks.get("english", 0)</code>.</p>
+<p>Looping:</p>
+<pre>for subject in marks:              # keys
+    print(subject)
+for subject, m in marks.items():   # key and value
+    print(subject, m)</pre>
+<p>Dictionaries are everywhere in real code: JSON from websites, config files, database rows. If you're storing "something about each X", reach for a dict.</p>`,
+  example: 'marks = {"maths": 88, "physics": 76}\nmarks["chemistry"] = 81\nfor subject, m in marks.items():\n    print(f"{subject:<10} {m}")\nprint("english:", marks.get("english", "not taken"))',
+  watch: [CS50(2, "loops dictionaries"), CWH("dictionary"), CHUCK("dictionaries")],
+  problems: [
+    { id: "d22p1", title: "Price lookup", type: "func", fn: "bill",
+      prompt: "<code>MENU = {\"chai\": 15, \"samosa\": 20, \"kachori\": 25}</code>. Write <code>bill(order)</code> taking a list of item names and returning the total. Ignore items not on the menu.",
+      starter: 'MENU = {"chai": 15, "samosa": 20, "kachori": 25}\n\ndef bill(order):\n    pass\n',
+      tests: [["bill(['chai', 'samosa'])", "35"], ["bill(['kachori', 'kachori', 'chai'])", "65"], ["bill(['pizza', 'chai'])", "15"], ["bill([])", "0"]],
+      hint: "total += MENU.get(item, 0)",
+      solution: 'MENU = {"chai": 15, "samosa": 20, "kachori": 25}\n\ndef bill(order):\n    total = 0\n    for item in order:\n        total += MENU.get(item, 0)\n    return total' },
+    { id: "d22p2", title: "Topper", type: "func", fn: "topper",
+      prompt: "Write <code>topper(marks)</code> where marks is a dict name → score. Return the name with the highest score.",
+      starter: "def topper(marks):\n    pass\n",
+      tests: [["topper({'Ravi': 72, 'Asha': 91, 'Karan': 85})", "'Asha'"], ["topper({'Solo': 10})", "'Solo'"]],
+      hint: "Best-so-far over marks.items(), or max(marks, key=marks.get).",
+      solution: "def topper(marks):\n    best = None\n    for name, m in marks.items():\n        if best is None or m > marks[best]:\n            best = name\n    return best" },
+    { id: "d22p3", title: "Invert a dictionary", type: "func", fn: "invert",
+      prompt: "Write <code>invert(d)</code> that swaps keys and values: <code>{\"a\": 1, \"b\": 2}</code> → <code>{1: \"a\", 2: \"b\"}</code>.",
+      starter: "def invert(d):\n    pass\n",
+      tests: [["invert({'a': 1, 'b': 2})", "{1: 'a', 2: 'b'}"], ["invert({})", "{}"]],
+      hint: "new = {}; for k, v in d.items(): new[v] = k",
+      solution: "def invert(d):\n    new = {}\n    for k, v in d.items():\n        new[v] = k\n    return new" },
+  ]
+},
+{
+  day: 23, week: 4, title: "Counting with dictionaries", topic: "frequency counting",
+  lesson: `
+<p>The single most useful dictionary pattern is <b>counting</b>: how many times does each thing appear?</p>
+<pre>text = "banana"
+counts = {}
+for ch in text:
+    if ch in counts:
+        counts[ch] += 1
+    else:
+        counts[ch] = 1
+print(counts)    # {'b': 1, 'a': 3, 'n': 2}</pre>
+<p>Shorter, using <code>.get</code>: <code>counts[ch] = counts.get(ch, 0) + 1</code>.</p>
+<p>This solves a huge family of problems: most common word, anagrams (two words are anagrams if their letter counts match), duplicate detection, voting tallies, and word frequency in a document.</p>
+<p>To find the most common item: <code>max(counts, key=counts.get)</code>. The <code>key=</code> part tells max to compare by count instead of by the key itself.</p>`,
+  example: 'words = "the cat and the hat and the bat".split()\ncounts = {}\nfor w in words:\n    counts[w] = counts.get(w, 0) + 1\nprint(counts)\nprint("Most common:", max(counts, key=counts.get))',
+  watch: [CS50(2, "dictionaries"), CWH("dictionary practice set"), CHUCK("dictionaries counting")],
+  problems: [
+    { id: "d23p1", title: "Letter frequency", type: "func", fn: "letter_counts",
+      prompt: "Write <code>letter_counts(word)</code> returning a dict of each letter → how many times it appears.",
+      starter: "def letter_counts(word):\n    pass\n",
+      tests: [["letter_counts('banana')", "{'b': 1, 'a': 3, 'n': 2}"], ["letter_counts('')", "{}"]],
+      hint: "counts[ch] = counts.get(ch, 0) + 1",
+      solution: "def letter_counts(word):\n    counts = {}\n    for ch in word:\n        counts[ch] = counts.get(ch, 0) + 1\n    return counts" },
+    { id: "d23p2", title: "Anagram check", type: "func", fn: "is_anagram",
+      prompt: "Write <code>is_anagram(a, b)</code>: True if the two words use exactly the same letters (ignore case). <code>listen</code>/<code>silent</code> → True.",
+      starter: "def is_anagram(a, b):\n    pass\n",
+      tests: [["is_anagram('listen', 'silent')", "True"], ["is_anagram('Dusty', 'study')", "True"], ["is_anagram('abc', 'abd')", "False"], ["is_anagram('aab', 'abb')", "False"]],
+      hint: "Two approaches: compare letter-count dicts, or compare sorted(a.lower()) == sorted(b.lower()).",
+      solution: "def is_anagram(a, b):\n    return sorted(a.lower()) == sorted(b.lower())" },
+    { id: "d23p3", title: "Election winner", type: "func", fn: "winner",
+      prompt: "Write <code>winner(votes)</code>, taking a list of candidate names (one per vote), returning the name with the most votes. If there's a tie, return the name that comes first alphabetically.",
+      starter: "def winner(votes):\n    pass\n",
+      tests: [["winner(['A', 'B', 'A', 'C', 'B', 'A'])", "'A'"], ["winner(['Zara', 'Amit', 'Zara', 'Amit'])", "'Amit'"], ["winner(['Solo'])", "'Solo'"]],
+      hint: "Count first. Then loop over sorted(counts) and keep the first name whose count is strictly bigger than the best so far.",
+      solution: "def winner(votes):\n    counts = {}\n    for v in votes:\n        counts[v] = counts.get(v, 0) + 1\n    best = None\n    for name in sorted(counts):\n        if best is None or counts[name] > counts[best]:\n            best = name\n    return best" },
+  ]
+},
+{
+  day: 24, week: 4, title: "List comprehensions", topic: "one-line list building",
+  lesson: `
+<p>You've written this pattern many times:</p>
+<pre>squares = []
+for n in range(1, 6):
+    squares.append(n * n)</pre>
+<p>A <b>list comprehension</b> says the same in one line:</p>
+<pre>squares = [n * n for n in range(1, 6)]    # [1, 4, 9, 16, 25]</pre>
+<p>Read it as "<i>n × n</i> for each <i>n</i> in the range". Add a filter with <code>if</code> at the end:</p>
+<pre>evens = [n for n in range(20) if n % 2 == 0]
+names = ["ravi", "asha"]
+caps = [x.title() for x in names]          # ['Ravi', 'Asha']</pre>
+<p>Now the input pattern from day 15 makes sense: <code>[int(x) for x in input().split()]</code> converts each piece to an int.</p>
+<p>Dictionary comprehensions exist too: <code>{w: len(w) for w in names}</code>.</p>
+<p>Use comprehensions for simple transform/filter jobs. If it gets hard to read, a normal loop is better.</p>`,
+  example: 'squares = [n * n for n in range(1, 6)]\nevens = [n for n in range(20) if n % 2 == 0]\nlengths = {w: len(w) for w in ["chai", "samosa"]}\nprint(squares)\nprint(evens)\nprint(lengths)',
+  watch: [CS50(2, "list comprehensions"), CWH("list comprehension"), CHUCK("lists")],
+  problems: [
+    { id: "d24p1", title: "Cubes", type: "func", fn: "cubes",
+      prompt: "Write <code>cubes(n)</code> returning <code>[1³, 2³, ..., n³]</code> using a comprehension.",
+      starter: "def cubes(n):\n    pass\n",
+      tests: [["cubes(4)", "[1, 8, 27, 64]"], ["cubes(0)", "[]"]],
+      hint: "return [i ** 3 for i in range(1, n + 1)]",
+      solution: "def cubes(n):\n    return [i ** 3 for i in range(1, n + 1)]" },
+    { id: "d24p2", title: "Long words only", type: "func", fn: "long_words",
+      prompt: "Write <code>long_words(sentence, k)</code> returning a list of words in the sentence longer than k letters, in lowercase.",
+      starter: "def long_words(sentence, k):\n    pass\n",
+      tests: [["long_words('Python is a Wonderful language', 5)", "['python', 'wonderful', 'language']"], ["long_words('a bb ccc', 3)", "[]"]],
+      hint: "[w.lower() for w in sentence.split() if len(w) > k]",
+      solution: "def long_words(sentence, k):\n    return [w.lower() for w in sentence.split() if len(w) > k]" },
+    { id: "d24p3", title: "FizzBuzz list", type: "func", fn: "fizzbuzz",
+      prompt: "Write <code>fizzbuzz(n)</code> returning a list for 1..n where multiples of 3 are <code>'Fizz'</code>, of 5 are <code>'Buzz'</code>, of both are <code>'FizzBuzz'</code>, and other numbers stay as ints. The most famous interview question.",
+      starter: "def fizzbuzz(n):\n    pass\n",
+      tests: [["fizzbuzz(5)", "[1, 2, 'Fizz', 4, 'Buzz']"], ["fizzbuzz(15)[-1]", "'FizzBuzz'"], ["fizzbuzz(15)[5:10]", "['Fizz', 7, 8, 'Fizz', 'Buzz']"]],
+      hint: "A normal loop is clearest: check % 15 first, then % 3, then % 5.",
+      solution: "def fizzbuzz(n):\n    out = []\n    for i in range(1, n + 1):\n        if i % 15 == 0:\n            out.append('FizzBuzz')\n        elif i % 3 == 0:\n            out.append('Fizz')\n        elif i % 5 == 0:\n            out.append('Buzz')\n        else:\n            out.append(i)\n    return out" },
+  ]
+},
+{
+  day: 25, week: 4, title: "Text processing", topic: "split, join, clean",
+  lesson: `
+<p>A lot of real programming is cleaning and reshaping text. Your toolkit:</p>
+<table class="ops"><tr><td><code>s.split()</code></td><td>words, splitting on any spaces</td></tr>
+<tr><td><code>s.split(",")</code></td><td>split on a specific separator</td></tr>
+<tr><td><code>" ".join(words)</code></td><td>glue a list of strings back together</td></tr>
+<tr><td><code>s.isdigit()</code>, <code>s.isalpha()</code></td><td>is it all digits / all letters?</td></tr>
+<tr><td><code>s.startswith("x")</code></td><td>prefix check (also <code>endswith</code>)</td></tr>
+<tr><td><code>s.find("x")</code></td><td>position of x, or -1</td></tr></table>
+<pre>csv = "Ravi,19,Jodhpur"
+name, age, city = csv.split(",")
+
+words = "the quick brown fox".split()
+print(" ".join(w.capitalize() for w in words))   # The Quick Brown Fox
+print("-".join(["2026", "09", "29"]))             # 2026-09-29</pre>
+<p><code>join</code> is called on the <b>separator</b>, and every item must already be a string.</p>`,
+  example: 'csv = "Ravi,19,Jodhpur"\nname, age, city = csv.split(",")\nprint(name, "is", int(age) + 1, "next year")\nwords = "the quick brown fox".split()\nprint(" ".join(w.capitalize() for w in words))',
+  watch: [CS50(0, "strings methods"), CWH("string methods"), CHUCK("strings")],
+  problems: [
+    { id: "d25p1", title: "Reverse the words", type: "func", fn: "reverse_words",
+      prompt: "Write <code>reverse_words(s)</code> that reverses the order of words: <code>\"I love Python\"</code> → <code>\"Python love I\"</code>.",
+      starter: "def reverse_words(s):\n    pass\n",
+      tests: [["reverse_words('I love Python')", "'Python love I'"], ["reverse_words('one')", "'one'"]],
+      hint: "' '.join(s.split()[::-1])",
+      solution: "def reverse_words(s):\n    return ' '.join(s.split()[::-1])" },
+    { id: "d25p2", title: "Title case", type: "func", fn: "title_case",
+      prompt: "Write <code>title_case(s)</code> that capitalises the first letter of each word and lowercases the rest, without using <code>.title()</code>.",
+      starter: "def title_case(s):\n    pass\n",
+      tests: [["title_case('hELLO wORLD')", "'Hello World'"], ["title_case('python is fun')", "'Python Is Fun'"]],
+      hint: "For each word: w[0].upper() + w[1:].lower(). Then join with spaces.",
+      solution: "def title_case(s):\n    return ' '.join(w[0].upper() + w[1:].lower() for w in s.split())" },
+    { id: "d25p3", title: "Valid mobile number", type: "func", fn: "valid_mobile",
+      prompt: "Write <code>valid_mobile(s)</code>: True if s is exactly 10 digits and starts with 6, 7, 8 or 9 (Indian mobile rule).",
+      starter: "def valid_mobile(s):\n    pass\n",
+      tests: [["valid_mobile('9876543210')", "True"], ["valid_mobile('5876543210')", "False"], ["valid_mobile('98765')", "False"], ["valid_mobile('98765abcde')", "False"]],
+      hint: "len(s) == 10 and s.isdigit() and s[0] in '6789'",
+      solution: "def valid_mobile(s):\n    return len(s) == 10 and s.isdigit() and s[0] in '6789'" },
+  ]
+},
+{
+  day: 26, week: 4, title: "Handling errors", topic: "try / except",
+  lesson: `
+<p>Programs meet bad data: a user types "abc" where a number was expected, a key is missing, someone divides by zero. Without handling, the program crashes. <code>try/except</code> lets you catch the error and respond:</p>
+<pre>text = "abc"
+try:
+    n = int(text)
+    print("Number:", n)
+except ValueError:
+    print("That's not a number")</pre>
+<p>Common error types to recognise:</p>
+<table class="ops"><tr><td><code>ValueError</code></td><td>right type, bad value: <code>int("abc")</code></td></tr>
+<tr><td><code>ZeroDivisionError</code></td><td><code>5 / 0</code></td></tr>
+<tr><td><code>KeyError</code></td><td>missing dictionary key</td></tr>
+<tr><td><code>IndexError</code></td><td>list position that doesn't exist</td></tr>
+<tr><td><code>TypeError</code></td><td>wrong type: <code>"a" + 1</code></td></tr>
+<tr><td><code>NameError</code></td><td>misspelt variable name</td></tr></table>
+<p>Only wrap the lines that can actually fail, and catch the specific error. A bare <code>except:</code> hides real bugs.</p>
+<p>Reading error messages is a skill: the <b>last line</b> says what went wrong, and the line number says where.</p>`,
+  example: 'def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return None\n\nprint(safe_divide(10, 4))\nprint(safe_divide(1, 0))\nfor raw in ["42", "4.2", "forty"]:\n    try:\n        print(int(raw))\n    except ValueError:\n        print(raw, "is not a whole number")',
+  watch: [CS50(3, "exceptions"), CWH("exception handling try except"), CHUCK("conditional execution try except")],
+  problems: [
+    { id: "d26p1", title: "Safe integer", type: "func", fn: "to_int",
+      prompt: "Write <code>to_int(s)</code> that returns <code>int(s)</code>, or <code>None</code> if s isn't a valid whole number.",
+      starter: "def to_int(s):\n    pass\n",
+      tests: [["to_int('42')", "42"], ["to_int('-7')", "-7"], ["to_int('abc')", "None"], ["to_int('4.5')", "None"]],
+      hint: "try: return int(s) / except ValueError: return None",
+      solution: "def to_int(s):\n    try:\n        return int(s)\n    except ValueError:\n        return None" },
+    { id: "d26p2", title: "Sum the valid ones", type: "func", fn: "sum_valid",
+      prompt: "Write <code>sum_valid(items)</code>: items is a list of strings; add up the ones that are whole numbers and skip the rest.",
+      starter: "def sum_valid(items):\n    pass\n",
+      tests: [["sum_valid(['10', 'x', '5', '', '-3'])", "12"], ["sum_valid(['a', 'b'])", "0"]],
+      hint: "Loop; inside, try: total += int(s) except ValueError: pass",
+      solution: "def sum_valid(items):\n    total = 0\n    for s in items:\n        try:\n            total += int(s)\n        except ValueError:\n            pass\n    return total" },
+    { id: "d26p3", title: "Safe average", type: "func", fn: "average",
+      prompt: "Write <code>average(nums)</code> returning the average rounded to 2 decimals, or the string <code>'empty'</code> for an empty list. Use try/except ZeroDivisionError rather than an if.",
+      starter: "def average(nums):\n    pass\n",
+      tests: [["average([1, 2, 3, 4])", "2.5"], ["average([])", "'empty'"], ["average([7, 8])", "7.5"]],
+      hint: "try: return round(sum(nums) / len(nums), 2) except ZeroDivisionError: return 'empty'",
+      solution: "def average(nums):\n    try:\n        return round(sum(nums) / len(nums), 2)\n    except ZeroDivisionError:\n        return 'empty'" },
+  ]
+},
+{
+  day: 27, week: 4, title: "Recursion", topic: "functions that call themselves",
+  lesson: `
+<p>A <b>recursive</b> function solves a problem by calling itself on a <b>smaller</b> version of the same problem. It needs two parts:</p>
+<ol><li><b>Base case</b>: the tiny version you can answer directly, which stops the recursion.</li>
+<li><b>Recursive case</b>: shrink the problem and call yourself.</li></ol>
+<pre>def factorial(n):
+    if n <= 1:                     # base case
+        return 1
+    return n * factorial(n - 1)    # smaller problem</pre>
+<p>Trace <code>factorial(4)</code>: 4 × factorial(3) → 4 × 3 × factorial(2) → 4 × 3 × 2 × factorial(1) → 4 × 3 × 2 × 1 = 24.</p>
+<p>Without a base case the function calls itself forever and crashes. Recursion shows up in trees, folders inside folders, and many interview puzzles. Any recursion can also be written as a loop; pick whichever is clearer.</p>`,
+  example: 'def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\ndef countdown(n):\n    if n == 0:\n        print("Go!")\n        return\n    print(n)\n    countdown(n - 1)\n\nprint(factorial(5))\ncountdown(3)',
+  watch: [CS50(9, "et cetera"), CWH("recursion"), CHUCK("functions")],
+  problems: [
+    { id: "d27p1", title: "Recursive sum", type: "func", fn: "sum_to",
+      prompt: "Write <code>sum_to(n)</code> that returns 1 + 2 + ... + n using recursion (no loops). sum_to(0) is 0.",
+      starter: "def sum_to(n):\n    pass\n",
+      tests: [["sum_to(0)", "0"], ["sum_to(5)", "15"], ["sum_to(100)", "5050"]],
+      hint: "Base: if n == 0: return 0. Otherwise: return n + sum_to(n - 1).",
+      solution: "def sum_to(n):\n    if n == 0:\n        return 0\n    return n + sum_to(n - 1)" },
+    { id: "d27p2", title: "Fibonacci", type: "func", fn: "fib",
+      prompt: "Write <code>fib(n)</code>: fib(0)=0, fib(1)=1, and each next is the sum of the two before (0, 1, 1, 2, 3, 5, 8...).",
+      starter: "def fib(n):\n    pass\n",
+      tests: [["fib(0)", "0"], ["fib(1)", "1"], ["fib(10)", "55"], ["[fib(i) for i in range(8)]", "[0, 1, 1, 2, 3, 5, 8, 13]"]],
+      hint: "if n < 2: return n. return fib(n - 1) + fib(n - 2).",
+      solution: "def fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)" },
+    { id: "d27p3", title: "Power without **", type: "func", fn: "power",
+      prompt: "Write <code>power(base, exp)</code> recursively, using only multiplication. exp ≥ 0.",
+      starter: "def power(base, exp):\n    pass\n",
+      tests: [["power(2, 10)", "1024"], ["power(5, 0)", "1"], ["power(3, 4)", "81"]],
+      hint: "Base: exp == 0 returns 1. Otherwise base * power(base, exp - 1).",
+      solution: "def power(base, exp):\n    if exp == 0:\n        return 1\n    return base * power(base, exp - 1)" },
+  ]
+},
+{
+  day: 28, week: 4, title: "Classes and objects", topic: "intro to OOP",
+  lesson: `
+<p>A <b>class</b> is a blueprint that bundles data and the functions that work on it. Each thing made from the blueprint is an <b>object</b>.</p>
+<pre>class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self.balance = balance
+
+    def deposit(self, amount):
+        self.balance += amount
+
+    def withdraw(self, amount):
+        if amount > self.balance:
+            return False
+        self.balance -= amount
+        return True
+
+acc = BankAccount("Ravi", 500)
+acc.deposit(200)
+print(acc.balance)    # 700</pre>
+<p><code>__init__</code> runs when an object is created and sets up its data. <code>self</code> means "this particular object"; every method takes it first, but you don't pass it yourself.</p>
+<p>Functions inside a class are called <b>methods</b> (like <code>.upper()</code> on strings: strings are objects too!). Adding a <code>__str__</code> method controls what <code>print(obj)</code> shows.</p>`,
+  example: 'class Student:\n    def __init__(self, name, marks):\n        self.name = name\n        self.marks = marks\n\n    def average(self):\n        return sum(self.marks) / len(self.marks)\n\n    def __str__(self):\n        return f"{self.name}: {self.average():.1f}"\n\ns = Student("Asha", [88, 92, 79])\nprint(s)\nprint(s.average() > 85)',
+  watch: [CS50(8, "object oriented programming"), CWH("oops classes objects"), CHUCK("object oriented")],
+  problems: [
+    { id: "d28p1", title: "Rectangle", type: "func", fn: "Rectangle",
+      prompt: "Write a class <code>Rectangle</code> with <code>__init__(self, w, h)</code> and methods <code>area()</code> and <code>perimeter()</code>.",
+      starter: "class Rectangle:\n    def __init__(self, w, h):\n        pass\n\n    def area(self):\n        pass\n\n    def perimeter(self):\n        pass\n",
+      tests: [["Rectangle(3, 4).area()", "12"], ["Rectangle(3, 4).perimeter()", "14"], ["Rectangle(5, 5).area()", "25"]],
+      hint: "Store self.w = w and self.h = h in __init__. area returns self.w * self.h.",
+      solution: "class Rectangle:\n    def __init__(self, w, h):\n        self.w = w\n        self.h = h\n\n    def area(self):\n        return self.w * self.h\n\n    def perimeter(self):\n        return 2 * (self.w + self.h)" },
+    { id: "d28p2", title: "Bank account", type: "func", fn: "BankAccount",
+      prompt: "Write <code>BankAccount(owner, balance=0)</code> with <code>deposit(amount)</code>, and <code>withdraw(amount)</code> that returns <code>False</code> (and changes nothing) if there isn't enough money, else deducts and returns <code>True</code>.",
+      starter: "class BankAccount:\n    def __init__(self, owner, balance=0):\n        pass\n",
+      tests: [
+        ["(lambda a: (a.deposit(200), a.balance)[1])(BankAccount('Ravi', 500))", "700"],
+        ["(lambda a: (a.withdraw(900), a.balance))(BankAccount('Ravi', 500))", "(False, 500)"],
+        ["(lambda a: (a.withdraw(300), a.balance))(BankAccount('Ravi', 500))", "(True, 200)"],
+        ["BankAccount('New').balance", "0"]],
+      hint: "withdraw: if amount > self.balance: return False; otherwise subtract and return True.",
+      solution: "class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, amount):\n        self.balance += amount\n\n    def withdraw(self, amount):\n        if amount > self.balance:\n            return False\n        self.balance -= amount\n        return True" },
+    { id: "d28p3", title: "Student with __str__", type: "func", fn: "Student",
+      prompt: "Write <code>Student(name, marks)</code> (marks is a list). <code>str(student)</code> should give <code>NAME (avg X)</code> with the average to 1 decimal, e.g. <code>Asha (avg 86.3)</code>.",
+      starter: "class Student:\n    pass\n",
+      tests: [["str(Student('Asha', [88, 92, 79]))", "'Asha (avg 86.3)'"], ["str(Student('Ravi', [50]))", "'Ravi (avg 50.0)'"]],
+      hint: 'def __str__(self): return f"{self.name} (avg {sum(self.marks) / len(self.marks):.1f})"',
+      solution: 'class Student:\n    def __init__(self, name, marks):\n        self.name = name\n        self.marks = marks\n\n    def __str__(self):\n        return f"{self.name} (avg {sum(self.marks) / len(self.marks):.1f})"' },
+  ]
+},
+{
+  day: 29, week: 4, title: "Searching and sorting", topic: "classic algorithms",
+  lesson: `
+<p>An <b>algorithm</b> is a step-by-step method. Two you'll meet in every DSA course:</p>
+<p><b>Linear search</b>: check items one by one. Simple, works on anything, slow for big lists.</p>
+<p><b>Binary search</b>: works only on a <b>sorted</b> list. Look at the middle; if the target is smaller, throw away the right half, else the left half. Repeat. A million items take only about 20 steps.</p>
+<pre>def binary_search(nums, target):
+    lo, hi = 0, len(nums) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1</pre>
+<p><b>Bubble sort</b>: repeatedly swap neighbours that are in the wrong order. Slow, but it teaches how sorting works. In real code use <code>sorted()</code>, and <code>sorted(items, key=...)</code> to sort by something specific, like <code>key=len</code> or <code>key=lambda s: s[1]</code>.</p>`,
+  example: 'students = [("Ravi", 72), ("Asha", 91), ("Karan", 85)]\nby_marks = sorted(students, key=lambda s: s[1], reverse=True)\nfor name, m in by_marks:\n    print(name, m)\nprint(sorted(["kiwi", "fig", "banana"], key=len))',
+  watch: [W("CS50x · Lecture 3 · Algorithms", "CS50 lecture 3 algorithms binary search"), CWH("binary search sorting"), W("freeCodeCamp", "freeCodeCamp algorithms data structures python beginners")],
+  problems: [
+    { id: "d29p1", title: "Binary search", type: "func", fn: "binary_search",
+      prompt: "Write <code>binary_search(nums, target)</code> for a sorted list. Return the index of target, or -1. Don't use <code>.index()</code> or <code>in</code>.",
+      starter: "def binary_search(nums, target):\n    pass\n",
+      tests: [["binary_search([1, 3, 5, 7, 9, 11], 7)", "3"], ["binary_search([1, 3, 5, 7, 9, 11], 4)", "-1"], ["binary_search([], 1)", "-1"], ["binary_search([2], 2)", "0"]],
+      hint: "Keep lo and hi. mid = (lo + hi) // 2. Move lo or hi past mid depending on the comparison.",
+      solution: "def binary_search(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1" },
+    { id: "d29p2", title: "Bubble sort", type: "func", fn: "bubble_sort",
+      prompt: "Write <code>bubble_sort(nums)</code> that returns a new sorted list (ascending) without using <code>sorted()</code> or <code>.sort()</code>.",
+      starter: "def bubble_sort(nums):\n    nums = nums[:]   # work on a copy\n    \n    return nums\n",
+      tests: [["bubble_sort([5, 2, 9, 1, 5])", "[1, 2, 5, 5, 9]"], ["bubble_sort([])", "[]"], ["bubble_sort([3, -1])", "[-1, 3]"]],
+      hint: "Two loops: for i in range(len(nums)): for j in range(len(nums) - 1 - i): if nums[j] > nums[j+1]: swap.",
+      solution: "def bubble_sort(nums):\n    nums = nums[:]\n    n = len(nums)\n    for i in range(n):\n        for j in range(n - 1 - i):\n            if nums[j] > nums[j + 1]:\n                nums[j], nums[j + 1] = nums[j + 1], nums[j]\n    return nums" },
+    { id: "d29p3", title: "Rank list", type: "func", fn: "rank",
+      prompt: "Write <code>rank(results)</code>: results is a list of <code>(name, marks)</code> tuples. Return the names ordered by marks, highest first. Ties go alphabetically by name.",
+      starter: "def rank(results):\n    pass\n",
+      tests: [["rank([('Ravi', 72), ('Asha', 91), ('Karan', 85)])", "['Asha', 'Karan', 'Ravi']"], ["rank([('Zoya', 80), ('Amit', 80), ('Bo', 90)])", "['Bo', 'Amit', 'Zoya']"]],
+      hint: "sorted(results, key=lambda r: (-r[1], r[0])). The minus sorts marks high-to-low while names stay A-to-Z.",
+      solution: "def rank(results):\n    return [name for name, m in sorted(results, key=lambda r: (-r[1], r[0]))]" },
+  ]
+},
+{
+  day: 30, week: 4, title: "Final challenges", topic: "put it all together",
+  lesson: `
+<p>You made it to day 30. You now know the core of Python that every program is built from: variables, input/output, conditions, loops, lists, dictionaries, functions, errors, recursion and classes.</p>
+<p>Today's problems mix everything, the way real problems do. Before coding, try this routine:</p>
+<ol><li><b>Understand</b>: work one example by hand on paper.</li>
+<li><b>Plan</b>: write the steps as comments in the editor.</li>
+<li><b>Code</b> one step at a time, printing values as you go.</li>
+<li><b>Test</b> the edge cases: empty input, one item, negatives, ties.</li></ol>
+<p><b>What next?</b> Go back to the <b>Practice</b> tab and redo any problem you needed the solution for, without looking. Then continue with the courses in the <b>Resources</b> tab: CS50P's problem sets are the natural next step, followed by small projects of your own (a to-do list, a marks calculator, a quiz game). Fluency comes from writing code every day.</p>`,
+  example: '# A tiny to-do manager using everything so far\ntasks = {}\n\ndef add(task):\n    tasks[task] = False\n\ndef done(task):\n    try:\n        tasks[task] = True\n    except KeyError:\n        print("No such task")\n\nadd("Revise loops")\nadd("Solve day 30")\ndone("Revise loops")\nfor t, d in tasks.items():\n    print("[x]" if d else "[ ]", t)',
+  watch: [W("CS50P · Final project", "CS50P final project ideas"), CWH("python projects for beginners"), W("freeCodeCamp", "freeCodeCamp python projects beginners")],
+  problems: [
+    { id: "d30p1", title: "Second largest", type: "func", fn: "second_largest",
+      prompt: "Write <code>second_largest(nums)</code> returning the second largest <b>distinct</b> value, or <code>None</code> if there isn't one.",
+      starter: "def second_largest(nums):\n    pass\n",
+      tests: [["second_largest([4, 9, 2, 9, 7])", "7"], ["second_largest([5, 5])", "None"], ["second_largest([1, 2])", "1"], ["second_largest([])", "None"]],
+      hint: "Remove duplicates with set, sort, and check the length.",
+      solution: "def second_largest(nums):\n    u = sorted(set(nums))\n    if len(u) < 2:\n        return None\n    return u[-2]" },
+    { id: "d30p2", title: "Word frequency top 3", type: "func", fn: "top_words",
+      prompt: "Write <code>top_words(text)</code>: lowercase the text, count words, and return the 3 most frequent as a list. Ties are broken alphabetically.",
+      starter: "def top_words(text):\n    pass\n",
+      tests: [["top_words('the cat and the hat and the bat')", "['the', 'and', 'bat']"], ["top_words('A a B')", "['a', 'b']"]],
+      hint: "Count into a dict, then sorted(counts, key=lambda w: (-counts[w], w))[:3]",
+      solution: "def top_words(text):\n    counts = {}\n    for w in text.lower().split():\n        counts[w] = counts.get(w, 0) + 1\n    return sorted(counts, key=lambda w: (-counts[w], w))[:3]" },
+    { id: "d30p3", title: "Balanced brackets", type: "func", fn: "balanced",
+      prompt: "Write <code>balanced(s)</code>: True if every <code>(</code>, <code>[</code>, <code>{</code> is closed by the matching bracket in the right order. Other characters are ignored. (Hint: use a list as a stack.)",
+      starter: "def balanced(s):\n    pass\n",
+      tests: [["balanced('(a[b]{c})')", "True"], ["balanced('([)]')", "False"], ["balanced('((')", "False"], ["balanced('')", "True"], ["balanced('())')", "False"]],
+      hint: "Push opening brackets with append. On a closing bracket, the stack must be non-empty and its top (stack.pop()) must be the matching opener. At the end the stack must be empty.",
+      solution: "def balanced(s):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return not stack" },
+  ]
+},
+];
+
+const RESOURCES = [
+  { name: "CS50P · Introduction to Programming with Python", who: "Harvard · David J. Malan", lang: "English", cost: "Free (certificate optional)",
+    why: "The best-structured free course. Ten lectures (functions, conditionals, loops, exceptions, libraries, tests, files, regex, OOP) with graded problem sets. Assumes zero experience.",
+    links: [["YouTube playlist", "https://www.youtube.com/playlist?list=PLhQjrBD2T3817j24-GogXmWqO5Q5vYy0V"], ["Course site", "https://cs50.harvard.edu/python/"]], pick: true },
+  { name: "Python for Beginners · 100 Days", who: "CodeWithHarry", lang: "Hindi", cost: "Free",
+    why: "Explains every concept in Hindi, slowly, with notes and practice sets. Ideal if English lectures feel fast.",
+    links: [["YouTube search", "https://www.youtube.com/results?search_query=codewithharry+python+100+days"]], pick: true },
+  { name: "Python for Everybody (PY4E)", who: "Dr. Charles Severance, Univ. of Michigan", lang: "English", cost: "Free",
+    why: "The gentlest university course. Starts from how computers work; ~14 hours of video plus a free textbook and auto-graded exercises.",
+    links: [["Full course video", "https://www.youtube.com/watch?v=8DvywoWv6fI"], ["py4e.com", "https://www.py4e.com/"]] },
+  { name: "futurecoder", who: "Open source", lang: "English", cost: "Free",
+    why: "Interactive in-browser course with a very forgiving pace and helpful error explanations. Great when videos stop sticking.",
+    links: [["futurecoder.io", "https://futurecoder.io/"], ["GitHub", "https://github.com/alexmojaki/futurecoder"]] },
+  { name: "30 Days of Python", who: "Asabeneh Yetayeh (GitHub)", lang: "English", cost: "Free",
+    why: "One of the most-starred Python learning repos on GitHub. Each day is a readable chapter with exercises; pairs well with this site's daily rhythm.",
+    links: [["GitHub repo", "https://github.com/Asabeneh/30-Days-Of-Python"]] },
+  { name: "100 Days of Code: Python Pro Bootcamp", who: "Dr. Angela Yu (Udemy)", lang: "English", cost: "Paid (often on sale)",
+    why: "Project-per-day format. Worth it after day 30 here, once basics are solid and he wants to build games, automation and web apps.",
+    links: [["Udemy", "https://www.udemy.com/course/100-days-of-code/"]] },
+];
+
+if (typeof module !== "undefined") module.exports = { COURSE, RESOURCES };
+
+// Topic-wise practice banks. Same problem format as COURSE.
+// level: 1 = easy, 2 = medium, 3 = hard
+const PRACTICE = [
+{ key: "loops", name: "Loops", blurb: "for, while, range, counters and accumulators. The skill almost every other problem depends on.", after: 12, problems: [
+  { id: "pl1", level: 1, title: "Print 1 to N", type: "output",
+    prompt: "Read n and print the numbers 1 to n, one per line.",
+    starter: "n = int(input())\n", cases: [{ inputs: ["4"], expected: "1\n2\n3\n4" }, { inputs: ["1"], expected: "1" }],
+    hint: "for i in range(1, n + 1): print(i)", solution: "n = int(input())\nfor i in range(1, n + 1):\n    print(i)" },
+  { id: "pl2", level: 1, title: "N down to 1", type: "output",
+    prompt: "Read n and print n down to 1 on one line, separated by spaces. Use <code>range</code> with a negative step.",
+    starter: "n = int(input())\n", cases: [{ inputs: ["5"], expected: "5 4 3 2 1" }],
+    hint: 'range(n, 0, -1) counts down and stops before 0. print(i, end=" ")', solution: 'n = int(input())\nfor i in range(n, 0, -1):\n    print(i, end=" ")' },
+  { id: "pl3", level: 1, title: "Sum of evens", type: "func", fn: "sum_evens",
+    prompt: "Write <code>sum_evens(n)</code> returning the sum of all even numbers from 1 to n.",
+    starter: "def sum_evens(n):\n    pass\n", tests: [["sum_evens(10)", "30"], ["sum_evens(1)", "0"], ["sum_evens(7)", "12"]],
+    hint: "total = 0; for i in range(2, n + 1, 2): total += i", solution: "def sum_evens(n):\n    total = 0\n    for i in range(2, n + 1, 2):\n        total += i\n    return total" },
+  { id: "pl4", level: 1, title: "Count digits", type: "func", fn: "count_digits",
+    prompt: "Write <code>count_digits(n)</code> for a positive whole number, using a while loop (no <code>len(str(n))</code>). 0 has 1 digit.",
+    starter: "def count_digits(n):\n    pass\n", tests: [["count_digits(4827)", "4"], ["count_digits(7)", "1"], ["count_digits(0)", "1"], ["count_digits(100000)", "6"]],
+    hint: "Handle 0 first. Then while n > 0: n //= 10; count += 1", solution: "def count_digits(n):\n    if n == 0:\n        return 1\n    count = 0\n    while n > 0:\n        n //= 10\n        count += 1\n    return count" },
+  { id: "pl5", level: 2, title: "Reverse a number", type: "func", fn: "reverse_num",
+    prompt: "Write <code>reverse_num(n)</code>: 1234 → 4321, 1200 → 21. Use % and // (no strings).",
+    starter: "def reverse_num(n):\n    pass\n", tests: [["reverse_num(1234)", "4321"], ["reverse_num(1200)", "21"], ["reverse_num(5)", "5"]],
+    hint: "rev = rev * 10 + n % 10, then n //= 10, until n is 0.", solution: "def reverse_num(n):\n    rev = 0\n    while n > 0:\n        rev = rev * 10 + n % 10\n        n //= 10\n    return rev" },
+  { id: "pl6", level: 2, title: "Fibonacci series", type: "func", fn: "fib_series",
+    prompt: "Write <code>fib_series(n)</code> returning the first n Fibonacci numbers as a list, using a loop: 0, 1, 1, 2, 3, 5...",
+    starter: "def fib_series(n):\n    pass\n", tests: [["fib_series(7)", "[0, 1, 1, 2, 3, 5, 8]"], ["fib_series(1)", "[0]"], ["fib_series(0)", "[]"]],
+    hint: "a, b = 0, 1. Repeat n times: append a, then a, b = b, a + b.", solution: "def fib_series(n):\n    out = []\n    a, b = 0, 1\n    for _ in range(n):\n        out.append(a)\n        a, b = b, a + b\n    return out" },
+  { id: "pl7", level: 2, title: "Armstrong number", type: "func", fn: "is_armstrong",
+    prompt: "An Armstrong number equals the sum of its digits each raised to the number of digits: 153 = 1³ + 5³ + 3³. Write <code>is_armstrong(n)</code>.",
+    starter: "def is_armstrong(n):\n    pass\n", tests: [["is_armstrong(153)", "True"], ["is_armstrong(370)", "True"], ["is_armstrong(9474)", "True"], ["is_armstrong(123)", "False"], ["is_armstrong(7)", "True"]],
+    hint: "k = len(str(n)). Loop over the digits, add digit ** k, compare with n.", solution: "def is_armstrong(n):\n    k = len(str(n))\n    total = 0\n    m = n\n    while m > 0:\n        total += (m % 10) ** k\n        m //= 10\n    return total == n" },
+  { id: "pl8", level: 2, title: "GCD (HCF)", type: "func", fn: "gcd",
+    prompt: "Write <code>gcd(a, b)</code> returning the greatest common divisor, using Euclid's method: replace (a, b) with (b, a % b) until b is 0.",
+    starter: "def gcd(a, b):\n    pass\n", tests: [["gcd(12, 18)", "6"], ["gcd(17, 5)", "1"], ["gcd(100, 75)", "25"], ["gcd(9, 0)", "9"]],
+    hint: "while b != 0: a, b = b, a % b. Then return a.", solution: "def gcd(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return a" },
+  { id: "pl9", level: 2, title: "Perfect number", type: "func", fn: "is_perfect",
+    prompt: "A perfect number equals the sum of its divisors excluding itself: 6 = 1 + 2 + 3. Write <code>is_perfect(n)</code>.",
+    starter: "def is_perfect(n):\n    pass\n", tests: [["is_perfect(6)", "True"], ["is_perfect(28)", "True"], ["is_perfect(12)", "False"], ["is_perfect(1)", "False"]],
+    hint: "Loop d from 1 to n - 1; add d when n % d == 0.", solution: "def is_perfect(n):\n    total = 0\n    for d in range(1, n):\n        if n % d == 0:\n            total += d\n    return n > 1 and total == n" },
+  { id: "pl10", level: 3, title: "Collatz steps", type: "func", fn: "collatz",
+    prompt: "Start at n. If even, halve it; if odd, do 3n + 1. Write <code>collatz(n)</code> returning how many steps it takes to reach 1.",
+    starter: "def collatz(n):\n    pass\n", tests: [["collatz(1)", "0"], ["collatz(6)", "8"], ["collatz(27)", "111"]],
+    hint: "while n != 1: update n with the rule, steps += 1", solution: "def collatz(n):\n    steps = 0\n    while n != 1:\n        if n % 2 == 0:\n            n //= 2\n        else:\n            n = 3 * n + 1\n        steps += 1\n    return steps" },
+  { id: "pl11", level: 3, title: "Nth prime", type: "func", fn: "nth_prime",
+    prompt: "Write <code>nth_prime(n)</code>: nth_prime(1) is 2, nth_prime(5) is 11. Loops inside loops.",
+    starter: "def nth_prime(n):\n    pass\n", tests: [["nth_prime(1)", "2"], ["nth_prime(5)", "11"], ["nth_prime(25)", "97"]],
+    hint: "Keep a candidate k starting at 2 and a count. For each k test primality with an inner loop; when count reaches n, return k.", solution: "def nth_prime(n):\n    count = 0\n    k = 1\n    while count < n:\n        k += 1\n        d = 2\n        prime = True\n        while d * d <= k:\n            if k % d == 0:\n                prime = False\n                break\n            d += 1\n        if prime:\n            count += 1\n    return k" },
+  { id: "pl12", level: 3, title: "Running total until stop", type: "output",
+    prompt: "Keep reading numbers until the word <code>stop</code>. Then print the count of numbers, their total, and the average to 2 decimals, each on its own line. (At least one number is always given.)",
+    starter: "", cases: [{ inputs: ["10", "20", "45", "stop"], expected: "3\n75\n25.00" }, { inputs: ["7", "stop"], expected: "1\n7\n7.00" }],
+    hint: 'while True: s = input(); if s == "stop": break; otherwise add int(s).', solution: 'count = 0\ntotal = 0\nwhile True:\n    s = input()\n    if s == "stop":\n        break\n    total += int(s)\n    count += 1\nprint(count)\nprint(total)\nprint(f"{total / count:.2f}")' },
+]},
+{ key: "patterns", name: "Patterns", blurb: "Star and number patterns: the classic nested-loop drill from college labs and placement tests.", after: 13, problems: [
+  { id: "pp1", level: 1, title: "Square of stars", type: "output",
+    prompt: "Read n and print an n × n square of <code>*</code>.", starter: "n = int(input())\n",
+    cases: [{ inputs: ["3"], expected: "***\n***\n***" }], hint: 'for _ in range(n): print("*" * n)', solution: 'n = int(input())\nfor _ in range(n):\n    print("*" * n)' },
+  { id: "pp2", level: 1, title: "Inverted triangle", type: "output",
+    prompt: "Read n and print an upside-down triangle: n stars, then n−1 ... down to 1.", starter: "n = int(input())\n",
+    cases: [{ inputs: ["4"], expected: "****\n***\n**\n*" }], hint: "range(n, 0, -1)", solution: 'n = int(input())\nfor i in range(n, 0, -1):\n    print("*" * i)' },
+  { id: "pp3", level: 2, title: "Right-aligned triangle", type: "output",
+    prompt: "Read n and print a triangle aligned to the right.<pre>   *\n  **\n ***\n****</pre>", starter: "n = int(input())\n",
+    cases: [{ inputs: ["4"], expected: "   *\n  **\n ***\n****" }], hint: 'Row i: " " * (n - i) + "*" * i', solution: 'n = int(input())\nfor i in range(1, n + 1):\n    print(" " * (n - i) + "*" * i)' },
+  { id: "pp4", level: 2, title: "Floyd's triangle", type: "output",
+    prompt: "Read n and print Floyd's triangle: consecutive numbers, row i has i numbers separated by spaces.<pre>1\n2 3\n4 5 6</pre>", starter: "n = int(input())\n",
+    cases: [{ inputs: ["4"], expected: "1\n2 3\n4 5 6\n7 8 9 10" }], hint: "Keep a counter k outside both loops and increase it after printing each number.", solution: 'n = int(input())\nk = 1\nfor i in range(1, n + 1):\n    row = []\n    for j in range(i):\n        row.append(str(k))\n        k += 1\n    print(" ".join(row))' },
+  { id: "pp5", level: 2, title: "Hollow square", type: "output",
+    prompt: "Read n (≥ 2) and print a hollow square: stars on the border, spaces inside.<pre>****\n*  *\n*  *\n****</pre>", starter: "n = int(input())\n",
+    cases: [{ inputs: ["4"], expected: "****\n*  *\n*  *\n****" }, { inputs: ["2"], expected: "**\n**" }], hint: 'First and last rows are full. Middle rows: "*" + " " * (n - 2) + "*"', solution: 'n = int(input())\nfor i in range(n):\n    if i == 0 or i == n - 1:\n        print("*" * n)\n    else:\n        print("*" + " " * (n - 2) + "*")' },
+  { id: "pp6", level: 2, title: "0-1 triangle", type: "output",
+    prompt: "Read n. Row i has i digits that alternate starting with 1 on odd rows and 0 on even rows.<pre>1\n01\n101\n0101</pre>", starter: "n = int(input())\n",
+    cases: [{ inputs: ["4"], expected: "1\n01\n101\n0101" }], hint: "Count rows from 1 and columns from 0. The digit is then (row + column) % 2.", solution: 'n = int(input())\nfor i in range(1, n + 1):\n    print("".join(str((i + j) % 2) for j in range(i)))' },
+  { id: "pp7", level: 3, title: "Diamond", type: "output",
+    prompt: "Read n and print a diamond: a pyramid of n rows followed by the inverted pyramid without repeating the middle row.<pre>  *\n ***\n*****\n ***\n  *</pre>", starter: "n = int(input())\n",
+    cases: [{ inputs: ["3"], expected: "  *\n ***\n*****\n ***\n  *" }, { inputs: ["1"], expected: "*" }], hint: "Loop i from 1 to n, then from n - 1 down to 1, using the same pyramid row formula.", solution: 'n = int(input())\nrows = list(range(1, n + 1)) + list(range(n - 1, 0, -1))\nfor i in rows:\n    print(" " * (n - i) + "*" * (2 * i - 1))' },
+  { id: "pp8", level: 3, title: "Pascal's triangle", type: "func", fn: "pascal",
+    prompt: "Write <code>pascal(n)</code> returning the first n rows of Pascal's triangle as a list of lists. Each number is the sum of the two above it.",
+    starter: "def pascal(n):\n    pass\n", tests: [["pascal(5)", "[[1], [1, 1], [1, 2, 1], [1, 3, 3, 1], [1, 4, 6, 4, 1]]"], ["pascal(1)", "[[1]]"], ["pascal(0)", "[]"]],
+    hint: "Build each row from the previous: [1] + [prev[j] + prev[j + 1] for j in range(len(prev) - 1)] + [1]", solution: "def pascal(n):\n    rows = []\n    for i in range(n):\n        if i == 0:\n            rows.append([1])\n        else:\n            prev = rows[-1]\n            rows.append([1] + [prev[j] + prev[j + 1] for j in range(len(prev) - 1)] + [1])\n    return rows" },
+]},
+{ key: "conditions", name: "Conditions", blurb: "if / elif / else and combining conditions correctly.", after: 9, problems: [
+  { id: "pc1", level: 1, title: "Positive, negative, zero", type: "func", fn: "sign",
+    prompt: "Write <code>sign(n)</code> returning <code>'positive'</code>, <code>'negative'</code> or <code>'zero'</code>.",
+    starter: "def sign(n):\n    pass\n", tests: [["sign(5)", "'positive'"], ["sign(-2)", "'negative'"], ["sign(0)", "'zero'"]],
+    hint: "Three branches: if n > 0, elif n < 0, else.", solution: "def sign(n):\n    if n > 0:\n        return 'positive'\n    elif n < 0:\n        return 'negative'\n    return 'zero'" },
+  { id: "pc2", level: 1, title: "Vowel or consonant", type: "func", fn: "letter_type",
+    prompt: "Write <code>letter_type(ch)</code> for a single letter (any case): return <code>'vowel'</code> or <code>'consonant'</code>.",
+    starter: "def letter_type(ch):\n    pass\n", tests: [["letter_type('a')", "'vowel'"], ["letter_type('E')", "'vowel'"], ["letter_type('z')", "'consonant'"]],
+    hint: "ch.lower() in 'aeiou'", solution: "def letter_type(ch):\n    return 'vowel' if ch.lower() in 'aeiou' else 'consonant'" },
+  { id: "pc3", level: 1, title: "Can vote?", type: "func", fn: "can_vote",
+    prompt: "Write <code>can_vote(age, is_citizen)</code>: True only if age is at least 18 and is_citizen is True.",
+    starter: "def can_vote(age, is_citizen):\n    pass\n", tests: [["can_vote(20, True)", "True"], ["can_vote(17, True)", "False"], ["can_vote(30, False)", "False"], ["can_vote(18, True)", "True"]],
+    hint: "return age >= 18 and is_citizen", solution: "def can_vote(age, is_citizen):\n    return age >= 18 and is_citizen" },
+  { id: "pc4", level: 2, title: "Triangle type", type: "func", fn: "triangle",
+    prompt: "Write <code>triangle(a, b, c)</code> for side lengths. Return <code>'invalid'</code> if the sum of any two sides is not greater than the third, else <code>'equilateral'</code>, <code>'isosceles'</code> or <code>'scalene'</code>.",
+    starter: "def triangle(a, b, c):\n    pass\n", tests: [["triangle(3, 3, 3)", "'equilateral'"], ["triangle(3, 3, 5)", "'isosceles'"], ["triangle(3, 4, 5)", "'scalene'"], ["triangle(1, 2, 3)", "'invalid'"], ["triangle(5, 3, 5)", "'isosceles'"]],
+    hint: "Check invalid first. Then a == b == c. Then a == b or b == c or a == c.", solution: "def triangle(a, b, c):\n    if a + b <= c or a + c <= b or b + c <= a:\n        return 'invalid'\n    if a == b == c:\n        return 'equilateral'\n    if a == b or b == c or a == c:\n        return 'isosceles'\n    return 'scalene'" },
+  { id: "pc5", level: 2, title: "Electricity bill", type: "func", fn: "electricity",
+    prompt: "Write <code>electricity(units)</code>. Slabs: first 100 units at Rs 3, next 100 (101–200) at Rs 5, anything above 200 at Rs 8. Return the total.",
+    starter: "def electricity(units):\n    pass\n", tests: [["electricity(50)", "150"], ["electricity(100)", "300"], ["electricity(150)", "550"], ["electricity(250)", "1200"]],
+    hint: "For 250: 100*3 + 100*5 + 50*8. Handle each slab with if/elif.", solution: "def electricity(units):\n    if units <= 100:\n        return units * 3\n    elif units <= 200:\n        return 300 + (units - 100) * 5\n    return 300 + 500 + (units - 200) * 8" },
+  { id: "pc6", level: 2, title: "Days in a month", type: "func", fn: "days_in",
+    prompt: "Write <code>days_in(month, year)</code> (month 1–12). Remember February in leap years.",
+    starter: "def days_in(month, year):\n    pass\n", tests: [["days_in(1, 2025)", "31"], ["days_in(4, 2025)", "30"], ["days_in(2, 2024)", "29"], ["days_in(2, 1900)", "28"], ["days_in(2, 2000)", "29"]],
+    hint: "if month == 2: leap check. elif month in (4, 6, 9, 11): 30. else: 31.", solution: "def days_in(month, year):\n    if month == 2:\n        leap = (year % 4 == 0 and year % 100 != 0) or year % 400 == 0\n        return 29 if leap else 28\n    if month in (4, 6, 9, 11):\n        return 30\n    return 31" },
+  { id: "pc7", level: 3, title: "Rock paper scissors", type: "func", fn: "rps",
+    prompt: "Write <code>rps(p1, p2)</code> with moves <code>'rock'</code>, <code>'paper'</code>, <code>'scissors'</code>. Return <code>'p1'</code>, <code>'p2'</code> or <code>'draw'</code>.",
+    starter: "def rps(p1, p2):\n    pass\n", tests: [["rps('rock', 'scissors')", "'p1'"], ["rps('rock', 'paper')", "'p2'"], ["rps('paper', 'paper')", "'draw'"], ["rps('scissors', 'paper')", "'p1'"]],
+    hint: "A dict of what beats what helps: beats = {'rock': 'scissors', ...}", solution: "def rps(p1, p2):\n    beats = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}\n    if p1 == p2:\n        return 'draw'\n    return 'p1' if beats[p1] == p2 else 'p2'" },
+  { id: "pc8", level: 3, title: "Income tax (simplified)", type: "func", fn: "tax",
+    prompt: "Write <code>tax(income)</code> using these made-up slabs: up to 3,00,000 → 0%; next 3,00,000 → 5%; next 3,00,000 → 10%; everything above 9,00,000 → 20%. Return the tax as an int.",
+    starter: "def tax(income):\n    pass\n", tests: [["tax(250000)", "0"], ["tax(500000)", "10000"], ["tax(900000)", "45000"], ["tax(1200000)", "105000"]],
+    hint: "Loop over slabs as (limit, rate) pairs and tax only the part of income inside each slab.", solution: "def tax(income):\n    slabs = [(300000, 0), (600000, 5), (900000, 10)]\n    total = 0\n    lower = 0\n    for upper, rate in slabs:\n        if income > lower:\n            total += (min(income, upper) - lower) * rate // 100\n        lower = upper\n    if income > 900000:\n        total += (income - 900000) * 20 // 100\n    return total" },
+]},
+{ key: "strings", name: "Strings", blurb: "Indexing, slicing, methods and building new text.", after: 17, problems: [
+  { id: "ps1", level: 1, title: "Reverse a string", type: "func", fn: "rev",
+    prompt: "Write <code>rev(s)</code> using a loop (not slicing) to build the reversed string.",
+    starter: "def rev(s):\n    pass\n", tests: [["rev('python')", "'nohtyp'"], ["rev('')", "''"], ["rev('a')", "'a'"]],
+    hint: "out = ''; for ch in s: out = ch + out", solution: "def rev(s):\n    out = ''\n    for ch in s:\n        out = ch + out\n    return out" },
+  { id: "ps2", level: 1, title: "Count words", type: "func", fn: "word_count",
+    prompt: "Write <code>word_count(s)</code> returning the number of words (words are separated by spaces, possibly several).",
+    starter: "def word_count(s):\n    pass\n", tests: [["word_count('I love  Python')", "3"], ["word_count('')", "0"], ["word_count('  hi  ')", "1"]],
+    hint: "len(s.split()). split() with no argument handles extra spaces.", solution: "def word_count(s):\n    return len(s.split())" },
+  { id: "ps3", level: 1, title: "Swap case", type: "func", fn: "swap_case",
+    prompt: "Write <code>swap_case(s)</code> changing lowercase to uppercase and vice versa, using a loop and <code>isupper()</code> (not <code>swapcase()</code>).",
+    starter: "def swap_case(s):\n    pass\n", tests: [["swap_case('PyThOn 3')", "'pYtHoN 3'"], ["swap_case('abc')", "'ABC'"]],
+    hint: "For each ch: ch.lower() if ch.isupper() else ch.upper()", solution: "def swap_case(s):\n    out = ''\n    for ch in s:\n        out += ch.lower() if ch.isupper() else ch.upper()\n    return out" },
+  { id: "ps4", level: 2, title: "Remove vowels", type: "func", fn: "no_vowels",
+    prompt: "Write <code>no_vowels(s)</code> returning s with all vowels (either case) removed.",
+    starter: "def no_vowels(s):\n    pass\n", tests: [["no_vowels('Programming is Awesome')", "'Prgrmmng s wsm'"], ["no_vowels('xyz')", "'xyz'"]],
+    hint: "Keep ch only if ch.lower() not in 'aeiou'", solution: "def no_vowels(s):\n    return ''.join(ch for ch in s if ch.lower() not in 'aeiou')" },
+  { id: "ps5", level: 2, title: "Longest word", type: "func", fn: "longest",
+    prompt: "Write <code>longest(s)</code> returning the longest word. If several tie, return the first one.",
+    starter: "def longest(s):\n    pass\n", tests: [["longest('I love programming in Python')", "'programming'"], ["longest('cat dog bat')", "'cat'"]],
+    hint: "Best-so-far: only replace when len(w) > len(best), strictly greater.", solution: "def longest(s):\n    best = ''\n    for w in s.split():\n        if len(w) > len(best):\n            best = w\n    return best" },
+  { id: "ps6", level: 2, title: "Character compression", type: "func", fn: "compress",
+    prompt: "Write <code>compress(s)</code>: <code>'aaabccdddd'</code> → <code>'a3b1c2d4'</code>.",
+    starter: "def compress(s):\n    pass\n", tests: [["compress('aaabccdddd')", "'a3b1c2d4'"], ["compress('abc')", "'a1b1c1'"], ["compress('')", "''"]],
+    hint: "Walk the string keeping the current char and its run length; when the char changes, write out the run.", solution: "def compress(s):\n    if not s:\n        return ''\n    out = ''\n    cur = s[0]\n    count = 0\n    for ch in s:\n        if ch == cur:\n            count += 1\n        else:\n            out += cur + str(count)\n            cur = ch\n            count = 1\n    return out + cur + str(count)" },
+  { id: "ps7", level: 2, title: "Caesar cipher", type: "func", fn: "caesar",
+    prompt: "Write <code>caesar(s, k)</code> shifting each lowercase letter k places forward, wrapping z → a. Leave other characters unchanged. Use <code>ord()</code> and <code>chr()</code>.",
+    starter: "def caesar(s, k):\n    pass\n", tests: [["caesar('abc', 1)", "'bcd'"], ["caesar('xyz', 3)", "'abc'"], ["caesar('hello world!', 13)", "'uryyb jbeyq!'"]],
+    hint: "chr((ord(ch) - ord('a') + k) % 26 + ord('a'))", solution: "def caesar(s, k):\n    out = ''\n    for ch in s:\n        if 'a' <= ch <= 'z':\n            out += chr((ord(ch) - ord('a') + k) % 26 + ord('a'))\n        else:\n            out += ch\n    return out" },
+  { id: "ps8", level: 3, title: "Sentence palindrome", type: "func", fn: "is_pal_sentence",
+    prompt: "Write <code>is_pal_sentence(s)</code>: True if s reads the same backwards when you ignore case, spaces and punctuation (keep only letters and digits).",
+    starter: "def is_pal_sentence(s):\n    pass\n", tests: [["is_pal_sentence('A man, a plan, a canal: Panama')", "True"], ["is_pal_sentence('Hello')", "False"], ["is_pal_sentence('No lemon, no melon')", "True"]],
+    hint: "clean = ''.join(ch.lower() for ch in s if ch.isalnum())", solution: "def is_pal_sentence(s):\n    clean = ''.join(ch.lower() for ch in s if ch.isalnum())\n    return clean == clean[::-1]" },
+]},
+{ key: "lists", name: "Lists", blurb: "Traversing, filtering, and rearranging lists.", after: 16, problems: [
+  { id: "pli1", level: 1, title: "Count positives", type: "func", fn: "count_pos",
+    prompt: "Write <code>count_pos(nums)</code> returning how many numbers are greater than 0.",
+    starter: "def count_pos(nums):\n    pass\n", tests: [["count_pos([3, -1, 0, 8, -5])", "2"], ["count_pos([])", "0"]],
+    hint: "Counter pattern.", solution: "def count_pos(nums):\n    count = 0\n    for n in nums:\n        if n > 0:\n            count += 1\n    return count" },
+  { id: "pli2", level: 1, title: "Reverse a list", type: "func", fn: "reverse_list",
+    prompt: "Write <code>reverse_list(nums)</code> returning a new reversed list using a loop (no slicing, no <code>reverse()</code>).",
+    starter: "def reverse_list(nums):\n    pass\n", tests: [["reverse_list([1, 2, 3])", "[3, 2, 1]"], ["reverse_list([])", "[]"]],
+    hint: "Loop i from len(nums) - 1 down to 0 and append nums[i].", solution: "def reverse_list(nums):\n    out = []\n    for i in range(len(nums) - 1, -1, -1):\n        out.append(nums[i])\n    return out" },
+  { id: "pli3", level: 1, title: "Split even and odd", type: "func", fn: "split_even_odd",
+    prompt: "Write <code>split_even_odd(nums)</code> returning two lists: evens and odds, keeping order.",
+    starter: "def split_even_odd(nums):\n    pass\n", tests: [["split_even_odd([1, 2, 3, 4, 5])", "([2, 4], [1, 3, 5])"], ["split_even_odd([])", "([], [])"]],
+    hint: "Two empty lists; append to one or the other; return evens, odds", solution: "def split_even_odd(nums):\n    evens, odds = [], []\n    for n in nums:\n        if n % 2 == 0:\n            evens.append(n)\n        else:\n            odds.append(n)\n    return evens, odds" },
+  { id: "pli4", level: 2, title: "Rotate right", type: "func", fn: "rotate",
+    prompt: "Write <code>rotate(nums, k)</code> moving every item k places to the right, wrapping around: rotate([1,2,3,4,5], 2) → [4,5,1,2,3].",
+    starter: "def rotate(nums, k):\n    pass\n", tests: [["rotate([1, 2, 3, 4, 5], 2)", "[4, 5, 1, 2, 3]"], ["rotate([1, 2, 3], 3)", "[1, 2, 3]"], ["rotate([1, 2, 3], 4)", "[3, 1, 2]"], ["rotate([], 2)", "[]"]],
+    hint: "k = k % len(nums) (guard empty lists). Then nums[-k:] + nums[:-k].", solution: "def rotate(nums, k):\n    if not nums:\n        return []\n    k = k % len(nums)\n    return nums[len(nums) - k:] + nums[:len(nums) - k]" },
+  { id: "pli5", level: 2, title: "Missing number", type: "func", fn: "missing",
+    prompt: "A list holds every number from 1 to n except one, in any order. Write <code>missing(nums)</code> returning the missing number.",
+    starter: "def missing(nums):\n    pass\n", tests: [["missing([3, 1, 5, 4])", "2"], ["missing([1, 2, 3])", "4"], ["missing([2])", "1"]],
+    hint: "n = len(nums) + 1. The full total is n * (n + 1) // 2. Subtract sum(nums).", solution: "def missing(nums):\n    n = len(nums) + 1\n    return n * (n + 1) // 2 - sum(nums)" },
+  { id: "pli6", level: 2, title: "Merge two sorted lists", type: "func", fn: "merge",
+    prompt: "Write <code>merge(a, b)</code> for two sorted lists, returning one sorted list, without calling <code>sorted()</code>. Use two positions i and j.",
+    starter: "def merge(a, b):\n    pass\n", tests: [["merge([1, 4, 9], [2, 3, 10, 12])", "[1, 2, 3, 4, 9, 10, 12]"], ["merge([], [1])", "[1]"], ["merge([5], [])", "[5]"]],
+    hint: "While both have items, take the smaller front item. Then add whatever is left of each.", solution: "def merge(a, b):\n    i = j = 0\n    out = []\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            out.append(a[i])\n            i += 1\n        else:\n            out.append(b[j])\n            j += 1\n    return out + a[i:] + b[j:]" },
+  { id: "pli7", level: 3, title: "Two sum", type: "func", fn: "two_sum",
+    prompt: "Write <code>two_sum(nums, target)</code> returning the indices (i, j), i &lt; j, of the first pair that adds up to target, or <code>None</code>. A very common interview question.",
+    starter: "def two_sum(nums, target):\n    pass\n", tests: [["two_sum([2, 7, 11, 15], 9)", "(0, 1)"], ["two_sum([3, 2, 4], 6)", "(1, 2)"], ["two_sum([1, 2], 7)", "None"]],
+    hint: "Two nested loops: i from 0, j from i + 1.", solution: "def two_sum(nums, target):\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return (i, j)\n    return None" },
+  { id: "pli8", level: 3, title: "Max subarray sum", type: "func", fn: "max_subarray",
+    prompt: "Write <code>max_subarray(nums)</code> returning the largest sum of any run of consecutive items (at least one item). Try Kadane's idea: at each item, either extend the current run or start fresh.",
+    starter: "def max_subarray(nums):\n    pass\n", tests: [["max_subarray([-2, 1, -3, 4, -1, 2, 1, -5, 4])", "6"], ["max_subarray([-3, -1, -2])", "-1"], ["max_subarray([5])", "5"]],
+    hint: "cur = max(n, cur + n); best = max(best, cur). Start both at nums[0].", solution: "def max_subarray(nums):\n    cur = best = nums[0]\n    for n in nums[1:]:\n        cur = max(n, cur + n)\n        best = max(best, cur)\n    return best" },
+]},
+{ key: "functions", name: "Functions", blurb: "Parameters, return values and breaking problems into helpers.", after: 20, problems: [
+  { id: "pf1", level: 1, title: "Simple interest", type: "func", fn: "simple_interest",
+    prompt: "Write <code>simple_interest(p, r, t)</code> returning P × R × T / 100.",
+    starter: "def simple_interest(p, r, t):\n    pass\n", tests: [["simple_interest(1000, 5, 2)", "100.0"], ["simple_interest(5000, 8, 3)", "1200.0"]],
+    hint: "return p * r * t / 100", solution: "def simple_interest(p, r, t):\n    return p * r * t / 100" },
+  { id: "pf2", level: 1, title: "Maximum of three", type: "func", fn: "max3",
+    prompt: "Write <code>max3(a, b, c)</code> without using <code>max()</code>. First write <code>max2(x, y)</code> and call it twice.",
+    starter: "def max2(x, y):\n    pass\n\ndef max3(a, b, c):\n    pass\n", tests: [["max3(3, 9, 4)", "9"], ["max3(-1, -5, -2)", "-1"], ["max3(7, 7, 7)", "7"]],
+    hint: "return max2(max2(a, b), c)", solution: "def max2(x, y):\n    return x if x > y else y\n\ndef max3(a, b, c):\n    return max2(max2(a, b), c)" },
+  { id: "pf3", level: 2, title: "Compound interest", type: "func", fn: "compound",
+    prompt: "Write <code>compound(p, r, years)</code>: each year the amount grows by r percent. Return the final amount rounded to 2 decimals. Use a loop.",
+    starter: "def compound(p, r, years):\n    pass\n", tests: [["compound(1000, 10, 2)", "1210.0"], ["compound(5000, 7, 5)", "7012.76"], ["compound(100, 5, 0)", "100"]],
+    hint: "amount = p; repeat years times: amount *= 1 + r / 100. Round only at the end.", solution: "def compound(p, r, years):\n    amount = p\n    for _ in range(years):\n        amount *= 1 + r / 100\n    return round(amount, 2)" },
+  { id: "pf4", level: 2, title: "Grade from marks list", type: "func", fn: "grade_of",
+    prompt: "Write <code>percent(marks, total)</code> and <code>grade_of(marks, total)</code>. grade_of must call percent. Grades: 90+ A, 75+ B, 50+ C, else F.",
+    starter: "def percent(marks, total):\n    pass\n\ndef grade_of(marks, total):\n    pass\n", tests: [["grade_of(450, 500)", "'A'"], ["grade_of(80, 100)", "'B'"], ["grade_of(30, 60)", "'C'"], ["grade_of(10, 50)", "'F'"]],
+    hint: "percent returns marks * 100 / total. grade_of stores p = percent(marks, total), then if/elif.", solution: "def percent(marks, total):\n    return marks * 100 / total\n\ndef grade_of(marks, total):\n    p = percent(marks, total)\n    if p >= 90:\n        return 'A'\n    elif p >= 75:\n        return 'B'\n    elif p >= 50:\n        return 'C'\n    return 'F'" },
+  { id: "pf5", level: 2, title: "Digital root", type: "func", fn: "digital_root",
+    prompt: "Write <code>digital_root(n)</code>: keep adding the digits until one digit is left. 9875 → 29 → 11 → 2. Write a helper <code>digit_sum</code>.",
+    starter: "def digit_sum(n):\n    pass\n\ndef digital_root(n):\n    pass\n", tests: [["digital_root(9875)", "2"], ["digital_root(5)", "5"], ["digital_root(99)", "9"]],
+    hint: "while n >= 10: n = digit_sum(n)", solution: "def digit_sum(n):\n    total = 0\n    while n > 0:\n        total += n % 10\n        n //= 10\n    return total\n\ndef digital_root(n):\n    while n >= 10:\n        n = digit_sum(n)\n    return n" },
+  { id: "pf6", level: 3, title: "Number to words", type: "func", fn: "to_words",
+    prompt: "Write <code>to_words(n)</code> for 0–99: 7 → <code>'seven'</code>, 42 → <code>'forty-two'</code>, 15 → <code>'fifteen'</code>, 90 → <code>'ninety'</code>.",
+    starter: "ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',\n        'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',\n        'seventeen', 'eighteen', 'nineteen']\nTENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']\n\ndef to_words(n):\n    pass\n",
+    tests: [["to_words(7)", "'seven'"], ["to_words(15)", "'fifteen'"], ["to_words(42)", "'forty-two'"], ["to_words(90)", "'ninety'"], ["to_words(0)", "'zero'"]],
+    hint: "If n < 20 use ONES[n]. Otherwise TENS[n // 10], plus '-' + ONES[n % 10] when n % 10 isn't 0.", solution: "ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',\n        'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',\n        'seventeen', 'eighteen', 'nineteen']\nTENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']\n\ndef to_words(n):\n    if n < 20:\n        return ONES[n]\n    word = TENS[n // 10]\n    if n % 10:\n        word += '-' + ONES[n % 10]\n    return word" },
+]},
+{ key: "dicts", name: "Dictionaries", blurb: "Lookup tables, counting and grouping.", after: 23, problems: [
+  { id: "pd1", level: 1, title: "Phone book lookup", type: "func", fn: "lookup",
+    prompt: "Write <code>lookup(book, name)</code> returning the number for name, or <code>'not found'</code>.",
+    starter: "def lookup(book, name):\n    pass\n", tests: [["lookup({'Ravi': '98111'}, 'Ravi')", "'98111'"], ["lookup({'Ravi': '98111'}, 'Asha')", "'not found'"]],
+    hint: "book.get(name, 'not found')", solution: "def lookup(book, name):\n    return book.get(name, 'not found')" },
+  { id: "pd2", level: 1, title: "Total marks", type: "func", fn: "total",
+    prompt: "Write <code>total(marks)</code> where marks maps subject → score. Return the sum of all scores.",
+    starter: "def total(marks):\n    pass\n", tests: [["total({'maths': 88, 'physics': 76, 'chem': 81})", "245"], ["total({})", "0"]],
+    hint: "sum(marks.values()), or loop over .values()", solution: "def total(marks):\n    return sum(marks.values())" },
+  { id: "pd3", level: 2, title: "Group by first letter", type: "func", fn: "group_first",
+    prompt: "Write <code>group_first(words)</code> returning a dict: first letter → list of words starting with it, in original order.",
+    starter: "def group_first(words):\n    pass\n", tests: [["group_first(['apple', 'bat', 'ant', 'ball', 'cat'])", "{'a': ['apple', 'ant'], 'b': ['bat', 'ball'], 'c': ['cat']}"], ["group_first([])", "{}"]],
+    hint: "If the letter isn't a key yet, set it to []. Then append.", solution: "def group_first(words):\n    groups = {}\n    for w in words:\n        k = w[0]\n        if k not in groups:\n            groups[k] = []\n        groups[k].append(w)\n    return groups" },
+  { id: "pd4", level: 2, title: "First non-repeating letter", type: "func", fn: "first_unique",
+    prompt: "Write <code>first_unique(s)</code> returning the first character that appears exactly once, or <code>None</code>.",
+    starter: "def first_unique(s):\n    pass\n", tests: [["first_unique('swiss')", "'w'"], ["first_unique('aabb')", "None"], ["first_unique('python')", "'p'"]],
+    hint: "Count every character first. Then walk s again and return the first with count 1.", solution: "def first_unique(s):\n    counts = {}\n    for ch in s:\n        counts[ch] = counts.get(ch, 0) + 1\n    for ch in s:\n        if counts[ch] == 1:\n            return ch\n    return None" },
+  { id: "pd5", level: 2, title: "Merge stock", type: "func", fn: "merge_stock",
+    prompt: "Two shops have stock dicts item → quantity. Write <code>merge_stock(a, b)</code> returning combined quantities.",
+    starter: "def merge_stock(a, b):\n    pass\n", tests: [["merge_stock({'pen': 5, 'ink': 2}, {'pen': 3, 'pad': 7})", "{'pen': 8, 'ink': 2, 'pad': 7}"], ["merge_stock({}, {'x': 1})", "{'x': 1}"]],
+    hint: "Copy a into a new dict, then for each item in b add with .get(item, 0).", solution: "def merge_stock(a, b):\n    out = dict(a)\n    for item, q in b.items():\n        out[item] = out.get(item, 0) + q\n    return out" },
+  { id: "pd6", level: 3, title: "Group anagrams", type: "func", fn: "anagram_groups",
+    prompt: "Write <code>anagram_groups(words)</code> returning a list of groups (lists) of words that are anagrams of each other. Keep words in original order inside each group, and groups in order of first appearance.",
+    starter: "def anagram_groups(words):\n    pass\n", tests: [["anagram_groups(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])", "[['eat', 'tea', 'ate'], ['tan', 'nat'], ['bat']]"], ["anagram_groups([])", "[]"]],
+    hint: "Use ''.join(sorted(w)) as the dict key. Dicts remember the order keys were added.", solution: "def anagram_groups(words):\n    groups = {}\n    for w in words:\n        key = ''.join(sorted(w))\n        if key not in groups:\n            groups[key] = []\n        groups[key].append(w)\n    return list(groups.values())" },
+]},
+{ key: "recursion", name: "Recursion", blurb: "Base case plus a smaller version of the same problem.", after: 27, problems: [
+  { id: "pr1", level: 1, title: "Count down (recursive)", type: "func", fn: "countdown",
+    prompt: "Write <code>countdown(n)</code> returning a list [n, n−1, ..., 1] recursively. countdown(0) is [].",
+    starter: "def countdown(n):\n    pass\n", tests: [["countdown(4)", "[4, 3, 2, 1]"], ["countdown(0)", "[]"]],
+    hint: "return [n] + countdown(n - 1)", solution: "def countdown(n):\n    if n == 0:\n        return []\n    return [n] + countdown(n - 1)" },
+  { id: "pr2", level: 1, title: "Sum of a list", type: "func", fn: "rsum",
+    prompt: "Write <code>rsum(nums)</code> recursively: the sum is the first item plus the sum of the rest.",
+    starter: "def rsum(nums):\n    pass\n", tests: [["rsum([1, 2, 3, 4])", "10"], ["rsum([])", "0"]],
+    hint: "Base: empty list → 0. Else nums[0] + rsum(nums[1:])", solution: "def rsum(nums):\n    if not nums:\n        return 0\n    return nums[0] + rsum(nums[1:])" },
+  { id: "pr3", level: 2, title: "Reverse (recursive)", type: "func", fn: "rrev",
+    prompt: "Write <code>rrev(s)</code> reversing a string recursively.",
+    starter: "def rrev(s):\n    pass\n", tests: [["rrev('hello')", "'olleh'"], ["rrev('')", "''"]],
+    hint: "rrev(s[1:]) + s[0]", solution: "def rrev(s):\n    if s == '':\n        return ''\n    return rrev(s[1:]) + s[0]" },
+  { id: "pr4", level: 2, title: "Binary representation", type: "func", fn: "to_binary",
+    prompt: "Write <code>to_binary(n)</code> returning the binary string of n ≥ 0 recursively: 10 → <code>'1010'</code>. Don't use <code>bin()</code>.",
+    starter: "def to_binary(n):\n    pass\n", tests: [["to_binary(10)", "'1010'"], ["to_binary(0)", "'0'"], ["to_binary(1)", "'1'"], ["to_binary(255)", "'11111111'"]],
+    hint: "Base: n < 2 → str(n). Else to_binary(n // 2) + str(n % 2)", solution: "def to_binary(n):\n    if n < 2:\n        return str(n)\n    return to_binary(n // 2) + str(n % 2)" },
+  { id: "pr5", level: 3, title: "Flatten a nested list", type: "func", fn: "flatten",
+    prompt: "Write <code>flatten(items)</code>: <code>[1, [2, [3, 4]], 5]</code> → <code>[1, 2, 3, 4, 5]</code>. Use <code>isinstance(x, list)</code>.",
+    starter: "def flatten(items):\n    pass\n", tests: [["flatten([1, [2, [3, 4]], 5])", "[1, 2, 3, 4, 5]"], ["flatten([])", "[]"], ["flatten([[[]]])", "[]"]],
+    hint: "For each x: if it's a list, extend with flatten(x); else append x.", solution: "def flatten(items):\n    out = []\n    for x in items:\n        if isinstance(x, list):\n            out.extend(flatten(x))\n        else:\n            out.append(x)\n    return out" },
+  { id: "pr6", level: 3, title: "All subsets", type: "func", fn: "subsets",
+    prompt: "Write <code>subsets(items)</code> returning every subset of the list. Order: build them so subsets([1,2]) gives <code>[[], [2], [1], [1, 2]]</code>.",
+    starter: "def subsets(items):\n    pass\n", tests: [["subsets([1, 2])", "[[], [2], [1], [1, 2]]"], ["subsets([])", "[[]]"], ["len(subsets([1, 2, 3, 4]))", "16"]],
+    hint: "rest = subsets(items[1:]). Answer = rest + [[items[0]] + s for s in rest].", solution: "def subsets(items):\n    if not items:\n        return [[]]\n    rest = subsets(items[1:])\n    return rest + [[items[0]] + s for s in rest]" },
+]},
+];
+
+if (typeof module !== "undefined") module.exports = { PRACTICE };
+
+</script>
+<script>
+(function(){
+const TOTAL = COURSE.reduce((n,d)=>n+d.problems.length,0) + PRACTICE.reduce((n,t)=>n+t.problems.length,0);
+const ALLP = PRACTICE.flatMap(t=>t.problems.map(p=>Object.assign({topic:t.key},p)));
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---------- storage (per-browser) ----------
+const KEY="dpl-v1";
+let S={solved:{},code:{},fails:{},days:[],current:1,prob:{}};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function streak(){
+  const set=new Set(S.days);let n=0;const d=new Date();
+  if(!set.has(today())) d.setDate(d.getDate()-1);   // streak survives until tonight
+  while(true){const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(set.has(k)){n++;d.setDate(d.getDate()-1);}else break;}
+  return n;
+}
+function dayDone(d){return d.problems.every(p=>S.solved[p.id]);}
+function nextDay(){const d=COURSE.find(d=>!dayDone(d));return d?d.day:30;}
+
+// ---------- Python runner ----------
+const ready = ()=>typeof Sk!=="undefined" && Sk.builtinFiles;
+function run(code,inputs){
+  return new Promise(resolve=>{
+    if(!ready()){resolve({out:"",err:"Python engine is still loading or couldn't load. Check your internet connection and refresh."});return;}
+    let out="",i=0;
+    Sk.configure({output:t=>{out+=t;},read:f=>{if(Sk.builtinFiles===undefined||Sk.builtinFiles.files[f]===undefined)throw "File not found: '"+f+"'";return Sk.builtinFiles.files[f];},
+      __future__:Sk.python3,inputfunTakesPrompt:true,inputfun:()=>i<inputs.length?inputs[i++]:"",execLimit:4000});
+    Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody("<stdin>",false,code,true))
+      .then(()=>resolve({out}),e=>resolve({out,err:e.toString()}));
+  });
+}
+function norm(s){return s.replace(/\r/g,"").split("\n").map(l=>l.replace(/\s+$/,"")).join("\n").replace(/\n+$/,"");}
+async function grade(p,code){
+  const res=[];
+  if(p.type==="output"){
+    for(const c of p.cases){const r=await run(code,c.inputs||[]);
+      res.push({ok:!r.err&&norm(r.out)===norm(c.expected),got:r.out,err:r.err,expected:c.expected,inputs:c.inputs||[]});}
+  }else{
+    for(const [expr,exp] of p.tests){const r=await run(code+'\n\nprint("@@R@@" + repr('+expr+'))',[]);
+      let got=null;const m=r.out.split("\n").filter(l=>l.startsWith("@@R@@"));if(m.length)got=m[m.length-1].slice(5);
+      res.push({ok:!r.err&&got===exp,got,err:r.err,expected:exp,call:expr});}
+  }
+  return res;
+}
+const TIPS=[
+ [/SyntaxError/,"Python couldn't read this line. Look for a missing colon at the end of if/for/while/def, a missing bracket or quote, or = where you meant ==."],
+ [/IndentationError|TabError|expected an indented block|unindent/,"Indentation problem. Lines inside if/for/while/def must be indented by the same amount (4 spaces). Use Tab / Shift+Tab."],
+ [/NameError/,"Python doesn't know that name. Check spelling and capitals, that the variable was created before this line, and that text has quotes around it."],
+ [/TypeError.*(concatenate|unsupported operand|can only)/,"You mixed text and numbers. Convert with int(...) or str(...), or print them separated by commas."],
+ [/TypeError/,"A value of the wrong type was used. Check what each variable holds (print(type(x)) helps)."],
+ [/ValueError/,"A value couldn't be converted, for example int(\"abc\") or int(\"4.5\")."],
+ [/ZeroDivisionError/,"Something was divided by zero."],
+ [/IndexError/,"You asked for a position that doesn't exist. Remember positions start at 0 and the last one is len(x) - 1."],
+ [/KeyError/,"That key isn't in the dictionary. Use .get(key, default) or check with 'in' first."],
+ [/AttributeError/,"That type doesn't have this method. Check spelling (e.g. .append is for lists, .upper for strings)."],
+ [/TimeLimitError/,"Your program ran too long, usually an infinite loop. Make sure the while condition eventually becomes False (did you forget to update the counter?)."],
+ [/RecursionError|maximum recursion/,"Your function called itself forever. Check the base case returns before the recursive call."],
+];
+function tip(err){for(const [re,t] of TIPS)if(re.test(err))return t;return "";}
+
+// ---------- tabs ----------
+function show(view){
+  for(const b of document.querySelectorAll("nav.tabs button"))b.setAttribute("aria-selected",b.dataset.view===view);
+  for(const v of ["today","practice","days","res"])$("#view-"+v).hidden=view!==v;
+  if(view==="days")renderDays();
+  if(view==="today"&&mounted!=="day")renderDay(S.current||nextDay());
+  if(view==="practice"&&mounted!=="practice")renderPractice(S.ptopic||"loops");
+  try{localStorage.setItem(KEY+"-view",view);}catch(e){}
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+
+function meters(){
+  const n=Object.keys(S.solved).filter(k=>S.solved[k]).length;
+  $("#solvedTxt").textContent=n+" / "+TOTAL;$("#solvedBar").style.width=(100*n/TOTAL)+"%";
+  $("#streakNum").textContent=streak();
+}
+
+// ---------- shared workbench ----------
+const BENCH=`
+      <div class="card prompt-text" id="promptCard"></div>
+      <div class="editor"><div class="gutter" id="gutter">1</div><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python code editor"></textarea></div>
+      <div class="stdin" id="stdinWrap"><label for="stdin">Input for Run (one value per line; Check uses its own test inputs)</label><textarea id="stdin" rows="2" spellcheck="false"></textarea></div>
+      <div class="actions">
+        <button class="btn" id="runBtn">▶ Run</button>
+        <button class="btn primary" id="checkBtn">Check answer</button>
+        <span class="sp"></span>
+        <button class="btn" id="hintBtn">Hint</button>
+        <button class="btn" id="solBtn">Solution</button>
+        <button class="btn" id="resetCode" title="Reset to starter code">Reset</button>
+      </div>
+      <div class="kbd">Ctrl/⌘ + Enter runs · Tab indents · Shift + Tab un-indents</div>
+      <div id="help"></div>
+      <div class="console" id="console" aria-live="polite"><span class="dim">Output appears here.</span></div>
+      <div id="results" class="results"></div>
+    `;
+let mounted="";
+// ---------- day view ----------
+let cur=null, pIdx=0;
+function renderDay(dayNum){
+  S.current=dayNum;save();
+  const d=COURSE[dayNum-1];cur={kind:"day",day:d.day,problems:d.problems,key:d.day};pIdx=S.prob[dayNum]||0;
+  $("#view-practice").innerHTML="";mounted="day";
+  const ytq=q=>"https://www.youtube.com/results?search_query="+encodeURIComponent(q);
+  $("#view-today").innerHTML=`
+  <div class="dayhead">
+    <div class="num" aria-hidden="true">${String(d.day).padStart(2,"0")}</div>
+    <div class="t"><div class="eyebrow">Day ${d.day} of 30 · Week ${d.week} · ${esc(d.topic)}</div><h2>${esc(d.title)}</h2></div>
+    <div class="daynav">
+      <button class="btn" id="prevDay" ${d.day===1?"disabled":""}>← ${d.day>1?"Day "+(d.day-1):"Start"}</button>
+      <button class="btn" id="nextDay" ${d.day===30?"disabled":""}>Day ${d.day<30?d.day+1:""} →</button>
+    </div>
+  </div>
+  <div class="grid2">
+    <article class="lesson">
+      <div class="eyebrow" style="margin-bottom:12px">Learn · about 15 minutes</div>
+      ${d.lesson}
+      <div class="example">
+        <div class="row"><span class="eyebrow">Example to run</span><button class="btn" id="tryEx">Open in editor</button></div>
+        <pre>${esc(d.example)}</pre>
+      </div>
+      <div class="watch">
+        <span class="eyebrow">Watch (opens YouTube)</span>
+        <ul>${d.watch.map(w=>`<li><a href="${ytq(w.q)}" target="_blank" rel="noopener"><span class="play">▶ VIDEO</span><span>${esc(w.src)}</span></a></li>`).join("")}</ul>
+      </div>
+      ${PRACTICE.filter(x=>x.after===d.day).map(x=>`<div class="watch"><span class="eyebrow">Want more?</span>
+        <p style="margin:6px 0 8px">${x.problems.length} extra ${esc(x.name.toLowerCase())} problems, easy to hard, are in the Practice tab.</p>
+        <button class="btn primary morep" data-k="${x.key}">Practise ${esc(x.name.toLowerCase())} →</button></div>`).join("")}
+    </article>
+    <div class="bench">
+      <div class="ptabs" role="tablist" aria-label="Problems">${d.problems.map((p,i)=>`
+        <button class="ptab ${S.solved[p.id]?"solved":""}" role="tab" data-i="${i}" aria-selected="${i===pIdx}">
+          <small>PROBLEM ${i+1} ${S.solved[p.id]?"· SOLVED ✓":""}</small><span class="pt">${esc(p.title)}</span></button>`).join("")}
+      </div>
+${BENCH}
+    </div>
+  </div>`;
+  $("#prevDay").onclick=()=>renderDay(d.day-1);
+  document.querySelectorAll(".morep").forEach(b=>b.onclick=()=>{storeCode();S.ptopic=b.dataset.k;mounted="";show("practice");});
+  $("#nextDay").onclick=()=>renderDay(d.day+1);
+  document.querySelectorAll(".ptab").forEach(b=>b.onclick=()=>{storeCode();pIdx=+b.dataset.i;S.prob[d.day]=pIdx;save();renderProblem();});
+  $("#tryEx").onclick=()=>{storeCode();loadCode(d.example);$("#stdin").value=d.exampleInput||"";$("#console").innerHTML='<span class="dim">Example loaded. Press Run. (Your problem code is saved; click the problem tab to get it back.)</span>';exampleMode=true;$("#code").focus();};
+  bindBench();
+  renderProblem();
+  window.scrollTo(0,0);
+}
+function bindBench(){
+  setupEditor();
+  $("#runBtn").onclick=doRun;$("#checkBtn").onclick=doCheck;
+  $("#hintBtn").onclick=()=>{$("#help").innerHTML=`<div class="helpbox"><b>Hint:</b> ${esc(prob().hint)}</div>`;};
+  $("#solBtn").onclick=askSolution;
+  $("#resetCode").onclick=()=>{loadCode(prob().starter);storeCode();};
+}
+let exampleMode=false;
+const prob=()=>cur.problems[pIdx];
+function renderProblem(){
+  exampleMode=false;
+  const p=prob();
+  document.querySelectorAll(".ptab,.plist button").forEach((b,i)=>b.setAttribute("aria-selected",i===pIdx));
+  const how=p.type==="output"?"Checked by comparing your printed output":"Checked by calling your "+(/^[A-Z]/.test(p.fn)?"class":"function")+" with test values";
+  $("#promptCard").innerHTML=`<span class="ptype">${how}</span><p>${p.prompt}</p>`;
+  if($("#ptitle"))$("#ptitle").innerHTML=`<span class="lv lv${p.level}">${LV[p.level]}</span> ${esc(p.title)}`;
+  loadCode(S.code[p.id]!=null?S.code[p.id]:p.starter);
+  $("#stdinWrap").hidden=!(p.type==="output"&&p.cases.some(c=>c.inputs&&c.inputs.length));
+  $("#stdin").value=p.type==="output"&&p.cases[0].inputs?p.cases[0].inputs.join("\n"):"";
+  $("#help").innerHTML="";$("#results").innerHTML="";
+  $("#console").innerHTML='<span class="dim">Output appears here.</span>';
+}
+function storeCode(){if(!cur||exampleMode)return;S.code[prob().id]=$("#code").value;save();}
+
+// ---------- editor ----------
+function loadCode(t){const ta=$("#code");ta.value=t;syncGutter();}
+function syncGutter(){const ta=$("#code"),n=ta.value.split("\n").length;$("#gutter").textContent=Array.from({length:n},(_,i)=>i+1).join("\n");$("#gutter").scrollTop=ta.scrollTop;}
+function setupEditor(){
+  const ta=$("#code");let t;
+  ta.addEventListener("input",()=>{syncGutter();clearTimeout(t);t=setTimeout(storeCode,400);});
+  ta.addEventListener("scroll",()=>{$("#gutter").scrollTop=ta.scrollTop;});
+  ta.addEventListener("keydown",e=>{
+    const v=ta.value,s=ta.selectionStart,en=ta.selectionEnd;
+    if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();doRun();return;}
+    if(e.key==="Tab"){
+      e.preventDefault();
+      const ls=v.lastIndexOf("\n",s-1)+1;
+      if(e.shiftKey){
+        const le=v.indexOf("\n",en-1)===-1?v.length:v.indexOf("\n",Math.max(en-1,s));
+        const block=v.slice(ls,le);const out=block.split("\n").map(l=>l.replace(/^ {1,4}/,"")).join("\n");
+        ta.value=v.slice(0,ls)+out+v.slice(le);ta.selectionStart=ls;ta.selectionEnd=ls+out.length;
+      }else if(s!==en&&v.slice(s,en).includes("\n")){
+        const le=v.indexOf("\n",en-1)===-1?v.length:v.indexOf("\n",en-1);
+        const out=v.slice(ls,le).split("\n").map(l=>"    "+l).join("\n");
+        ta.value=v.slice(0,ls)+out+v.slice(le);ta.selectionStart=ls;ta.selectionEnd=ls+out.length;
+      }else{ta.setRangeText("    ",s,en,"end");}
+      syncGutter();storeCode();return;
+    }
+    if(e.key==="Enter"&&!e.shiftKey){
+      const ls=v.lastIndexOf("\n",s-1)+1;const line=v.slice(ls,s);
+      let ind=(line.match(/^\s*/)||[""])[0];if(/:\s*(#.*)?$/.test(line))ind+="    ";
+      e.preventDefault();ta.setRangeText("\n"+ind,s,en,"end");syncGutter();storeCode();
+    }
+    if(e.key==="Backspace"&&s===en){
+      const ls=v.lastIndexOf("\n",s-1)+1;const before=v.slice(ls,s);
+      if(before.length>0&&/^ +$/.test(before)&&before.length%4===0){e.preventDefault();ta.setRangeText("",s-4,s,"end");syncGutter();}
+    }
+  });
+}
+
+// ---------- run / check ----------
+function showOutput(r){
+  const c=$("#console");
+  let h=r.out?esc(r.out):(r.err?"":'<span class="dim">(no output — did you forget print?)</span>');
+  if(r.err){h+=`<span class="err">${esc(r.err)}</span>`;}
+  c.innerHTML=h;
+  const t=r.err?tip(r.err):"";
+  $("#help").innerHTML=t?`<div class="helpbox"><b>What this error usually means:</b> ${esc(t)}</div>`:"";
+}
+async function doRun(){
+  const b=$("#runBtn");b.disabled=true;$("#console").innerHTML='<span class="dim">Running…</span>';
+  const inputs=$("#stdin").value.replace(/\n$/,"").split("\n");
+  const r=await run($("#code").value,$("#stdin").value?inputs:[]);
+  showOutput(r);b.disabled=false;
+}
+async function doCheck(){
+  if(exampleMode){$("#results").innerHTML='<div class="helpbox">This is the lesson example, not a problem. Click a problem tab above to check your answer.</div>';return;}
+  const p=prob(),code=$("#code").value;storeCode();
+  const b=$("#checkBtn");b.disabled=true;$("#results").innerHTML='<div class="kbd">Checking…</div>';
+  const res=await grade(p,code);
+  const all=res.every(x=>x.ok);
+  const first=res.find(x=>x.err);
+  if(first)showOutput({out:first.got&&p.type==="output"?first.got:"",err:first.err});
+  let h=`<div class="verdict ${all?"ok":""}">${all?"All "+res.length+" tests passed. Solved!":res.filter(x=>x.ok).length+" of "+res.length+" tests passed"}</div>`;
+  h+=res.map((x,i)=>{
+    const label=p.type==="output"?(x.inputs.length?"Input: "+x.inputs.join(" ⏎ "):"Output"):x.call;
+    if(x.ok)return `<div class="res ok"><div class="h"><span class="tag">PASS</span><span>${esc(label)}</span></div></div>`;
+    const got=x.err?"Error: "+x.err:(p.type==="output"?(x.got||"(nothing printed)"):(x.got==null?"(nothing returned — did you use return?)":x.got));
+    return `<div class="res bad"><div class="h"><span class="tag">FAIL</span><span>${esc(label)}</span></div>
+      <div><span class="eyebrow">Expected</span><pre>${esc(x.expected)}</pre></div>
+      <div><span class="eyebrow">Yours</span><pre>${esc(got)}</pre></div></div>`;
+  }).join("");
+  $("#results").innerHTML=h;b.disabled=false;
+  if(all){
+    if(!S.solved[p.id]){S.solved[p.id]=true;const t=today();if(!S.days.includes(t))S.days.push(t);save();}
+    meters();
+    if(cur.kind==="practice"){afterPracticeSolve();return;}
+    const tab=document.querySelectorAll(".ptab")[pIdx];tab.classList.add("solved");tab.querySelector("small").textContent="PROBLEM "+(pIdx+1)+" · SOLVED ✓";
+    const nextUnsolved=cur.problems.findIndex(q=>!S.solved[q.id]);
+    let more="";
+    if(nextUnsolved>=0)more=`<button class="btn primary" id="goNext">Next: problem ${nextUnsolved+1} →</button>`;
+    else if(cur.day<30)more=`<div class="helpbox"><b>Day ${cur.day} complete.</b> Come back tomorrow for day ${cur.day+1}, or keep going now. Consistency beats speed.</div><button class="btn primary" id="goDay">Start day ${cur.day+1} →</button>`;
+    else more=`<div class="helpbox"><b>All 30 days complete.</b> Check the Resources tab for what to learn next.</div>`;
+    $("#results").insertAdjacentHTML("beforeend",`<div class="actions">${more}</div>`);
+    if($("#goNext"))$("#goNext").onclick=()=>{pIdx=nextUnsolved;S.prob[cur.day]=pIdx;save();renderProblem();window.scrollTo({top:$(".bench").offsetTop-80});};
+    if($("#goDay"))$("#goDay").onclick=()=>renderDay(cur.day+1);
+  }else{
+    S.fails[p.id]=(S.fails[p.id]||0)+1;save();
+  }
+}
+function askSolution(){
+  const p=prob();const tries=S.fails[p.id]||0;
+  if(tries<2&&!S.solved[p.id]){
+    $("#help").innerHTML=`<div class="helpbox confirm"><span>You've checked ${tries} time${tries===1?"":"s"}. Struggling a bit is how it sticks: try the hint and two checks first. Still want to see it?</span>
+      <button class="btn" id="solYes">Show solution</button><button class="btn" id="solNo">Keep trying</button></div>`;
+    $("#solYes").onclick=showSolution;$("#solNo").onclick=()=>{$("#help").innerHTML="";};
+  }else showSolution();
+}
+function showSolution(){
+  const p=prob();
+  $("#help").innerHTML=`<div class="card solution"><span class="eyebrow">One possible solution</span><pre>${esc(p.solution)}</pre>
+  <p style="margin:10px 0 0;font-size:14px">Read it line by line, then close this and type it yourself from memory. Copy-paste teaches nothing.</p></div>`;
+}
+
+// ---------- practice ----------
+const LV={1:"EASY",2:"MEDIUM",3:"HARD"};
+function potd(){ // problem of the day: same for everyone on a date, prefers unsolved
+  const k=today();let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))>>>0;
+  const pool=ALLP.filter(p=>!S.solved[p.id]);const list=pool.length?pool:ALLP;
+  return list[h%list.length];
+}
+function renderPractice(topicKey,pid){
+  const t=PRACTICE.find(x=>x.key===topicKey)||PRACTICE[0];S.ptopic=t.key;save();
+  cur={kind:"practice",topic:t,problems:t.problems,key:"p-"+t.key};
+  pIdx=pid?Math.max(0,t.problems.findIndex(p=>p.id===pid)):(S.prob[cur.key]||0);S.prob[cur.key]=pIdx;save();
+  $("#view-today").innerHTML="";mounted="practice";
+  const pd=potd();const pdTopic=PRACTICE.find(x=>x.key===pd.topic);
+  const nSolved=ALLP.filter(p=>S.solved[p.id]).length;
+  $("#view-practice").innerHTML=`
+  <div class="phead">
+    <div class="t"><div class="eyebrow">${nSolved} of ${ALLP.length} practice problems solved</div><h2>Practice by topic</h2>
+      <p class="sub">Extra problems for each topic, from easy to hard. Use them after the matching course day, or whenever a topic feels shaky.</p></div>
+    <button class="potd" id="potd"><span class="eyebrow">Problem of the day</span><b>${esc(pd.title)}</b><small>${esc(pdTopic.name)} · ${LV[pd.level]}${S.solved[pd.id]?" · SOLVED ✓":""}</small></button>
+  </div>
+  <div class="topics" role="tablist" aria-label="Topics">${PRACTICE.map(x=>{const s=x.problems.filter(p=>S.solved[p.id]).length;
+    return `<button class="topic ${s===x.problems.length?"done":""}" role="tab" data-k="${x.key}" aria-selected="${x.key===t.key}">${esc(x.name)}<small>${s}/${x.problems.length}</small></button>`}).join("")}</div>
+  <div class="grid2 pgrid">
+    <aside class="lesson ptopic">
+      <div class="eyebrow">${esc(t.name)} · best after course day ${t.after}</div>
+      <p style="margin:6px 0 14px">${esc(t.blurb)}</p>
+      <div class="plist" role="tablist" aria-label="Problems">${t.problems.map((p,i)=>`
+        <button role="tab" data-i="${i}" aria-selected="${i===pIdx}" class="${S.solved[p.id]?"solved":""}">
+          <span class="lv lv${p.level}">${LV[p.level]}</span><span class="pt">${esc(p.title)}</span><span class="ck">${S.solved[p.id]?"✓":""}</span></button>`).join("")}</div>
+    </aside>
+    <div class="bench">
+      <h3 class="ptitle" id="ptitle"></h3>
+      ${BENCH}
+    </div>
+  </div>`;
+  document.querySelectorAll(".topic").forEach(b=>b.onclick=()=>{storeCode();renderPractice(b.dataset.k);});
+  document.querySelectorAll(".plist button").forEach(b=>b.onclick=()=>{storeCode();pIdx=+b.dataset.i;S.prob[cur.key]=pIdx;save();renderProblem();
+    if(window.innerWidth<980)$("#ptitle").scrollIntoView({block:"start"});});
+  $("#potd").onclick=()=>{storeCode();renderPractice(pd.topic,pd.id);$("#ptitle").scrollIntoView({block:"start"});};
+  bindBench();
+  renderProblem();
+}
+function afterPracticeSolve(){
+  const b=document.querySelectorAll(".plist button")[pIdx];if(b){b.classList.add("solved");b.querySelector(".ck").textContent="✓";}
+  const tb=document.querySelector('.topic[aria-selected="true"] small');if(tb)tb.textContent=cur.problems.filter(p=>S.solved[p.id]).length+"/"+cur.problems.length;
+  const n=cur.problems.findIndex((q,i)=>i>pIdx&&!S.solved[q.id]);const nx=n>=0?n:cur.problems.findIndex(q=>!S.solved[q.id]);
+  const more=nx>=0?`<button class="btn primary" id="goNext">Next ${esc(cur.topic.name.toLowerCase())} problem →</button>`
+    :`<div class="helpbox"><b>Every ${esc(cur.topic.name.toLowerCase())} problem solved.</b> Pick another topic above.</div>`;
+  $("#results").insertAdjacentHTML("beforeend",`<div class="actions">${more}</div>`);
+  if($("#goNext"))$("#goNext").onclick=()=>{pIdx=nx;S.prob[cur.key]=pIdx;save();renderProblem();$("#ptitle").scrollIntoView({block:"start"});};
+}
+
+// ---------- all days ----------
+function renderDays(){
+  const nd=nextDay();
+  const weeks=[["Week 1","Talking to the computer"],["Week 2","Decisions and repetition"],["Week 3","Collections and functions"],["Week 4","Real-world Python"]];
+  $("#view-days").innerHTML=`<div class="weeks">${weeks.map((w,wi)=>`
+    <div class="week"><h3>${w[0]}: ${w[1]}<small>${COURSE.filter(d=>d.week===wi+1).filter(dayDone).length}/${COURSE.filter(d=>d.week===wi+1).length} DAYS DONE</small></h3>
+    <div class="days">${COURSE.filter(d=>d.week===wi+1).map(d=>`
+      <button class="daytile ${dayDone(d)?"done":""} ${d.day===nd&&!dayDone(d)?"today":""}" data-day="${d.day}">
+        <span class="dn">${String(d.day).padStart(2,"0")}</span><span class="tt">${esc(d.title)}</span>
+        <span class="dots">${d.problems.map(p=>`<i class="${S.solved[p.id]?"on":""}"></i>`).join("")}</span>
+      </button>`).join("")}</div></div>`).join("")}</div>`;
+  document.querySelectorAll(".daytile").forEach(t=>t.onclick=()=>{show("today");renderDay(+t.dataset.day);});
+}
+
+// ---------- resources ----------
+function renderRes(){
+  $("#view-res").innerHTML=`
+  <div class="res-intro"><div class="eyebrow">Hand-picked, all beginner-first</div><h2>Where to learn alongside this site</h2>
+  <p>Each day's lesson links to matching videos. These are the full courses behind them. Start with one English and one Hindi source; switching between many courses is a common way to stall.</p></div>
+  <div class="rgrid">${RESOURCES.map(r=>`
+    <div class="rcard ${r.pick?"pick":""}"><div class="chips">${r.pick?'<span class="chip pick">START HERE</span>':""}<span class="chip">${esc(r.lang.toUpperCase())}</span><span class="chip">${esc(r.cost.toUpperCase())}</span></div>
+    <h3>${esc(r.name)}</h3><div class="who">${esc(r.who)}</div><p>${esc(r.why)}</p>
+    <div class="links">${r.links.map(l=>`<a class="btn" href="${l[1]}" target="_blank" rel="noopener">${esc(l[0])} ↗</a>`).join("")}</div></div>`).join("")}</div>
+  <div class="plan"><span class="eyebrow">A daily routine that works (about 1 hour)</span>
+  <ol><li>Watch the matching video section (20 min). Pause and type along.</li>
+  <li>Read the day's lesson here and run the example; change something and run it again (10 min).</li>
+  <li>Solve the three problems without looking at solutions (30 min). Use the hint first.</li>
+  <li>Next morning, redo yesterday's hardest problem from a blank editor (5 min).</li></ol></div>`;
+}
+
+// ---------- reset ----------
+$("#resetBtn").onclick=()=>{
+  $("#resetArea").innerHTML=`<span>Erase all solved problems, code and streak? </span><button class="linkbtn" id="rsYes" type="button">Yes, erase</button> · <button class="linkbtn" id="rsNo" type="button">Cancel</button>`;
+  $("#rsYes").onclick=()=>{try{localStorage.removeItem(KEY);}catch(e){}location.reload();};
+  $("#rsNo").onclick=()=>{$("#resetArea").innerHTML='<button class="linkbtn" id="resetBtn" type="button">Reset all progress</button>';location.reload();};
+};
+
+// ---------- boot ----------
+meters();renderRes();
+let v="today";try{v=localStorage.getItem(KEY+"-view")||"today";}catch(e){}
+if(v==="practice")renderPractice(S.ptopic||"loops");else renderDay(S.current&&S.current>=1&&S.current<=30?S.current:nextDay());
+if(v!=="today")show(v);
+})();
+</script>
+
+</body>
+</html>
